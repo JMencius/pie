@@ -3,6 +3,7 @@ import sys
 import os
 import time
 from scripts.parse_vcf import process_filter_vcf
+from scripts.intersect import intersect
 from multiprocessing import Pool
 
 
@@ -25,7 +26,7 @@ from multiprocessing import Pool
 @click.option("--no-double", is_flag = True, help = "Ignore double heterozygous site")
 @click.option("--no-centro", is_flag = True, help = "Ignore centromere region")
 @click.option("--only-num", is_flag = True, help = "Export only numbers")
-@click.option("--verbose", is_flag = True, help = "Verbose mode print some results to stdout")
+@click.option("--verbose", is_flag = True, help = "Verbose mode print intermediate results to stdout")
 @click.version_option(version="0.1.0", prog_name = r"phasing all-in-one evaluator(pie), based on Python 3.7+")
 def main(input, compare, ref, output, threads, fbed, min_sv, chrom, mincount, canonical, no_sex, only_snv, no_sv, no_indel, no_double, no_centro, only_num, verbose):
     start_time = time.time()
@@ -40,30 +41,39 @@ def main(input, compare, ref, output, threads, fbed, min_sv, chrom, mincount, ca
     # process chromosome area
     chrom = set(chrom.split(','))
 
-    # print parameters
-    ctx = click.get_current_context()
-    click.echo('Command parameters:')
-    
-    for param in ctx.command.params:
-        param_name = param.name
-        if param_name != "version":
-            param_value = ctx.params[param_name]
-            click.echo(f'{param_name}: {param_value}')
-    print('\n')
-    
-    ###sys.exit(0)
+    # print parameters in verbose mode
+    if verbose:
+        ctx = click.get_current_context()
+        click.echo('Command parameters:')
+        for param in ctx.command.params:
+            param_name = param.name
+            if param_name != "version":
+                param_value = ctx.params[param_name]
+                click.echo(f'{param_name}: {param_value}')
+            print('\n')
+
 
     # simultaneously read two vcf files
     print("Start reading vcf files")
     read_threads = min(2, threads)
     with Pool(read_threads) as p:
-    ##process_filter_vcf(filename: str, fbed: str, min_sv: int, chrom: set, no_sex : bool, canonical : bool, only_snv : bool, no_sv : bool, no_indel : bool, no_double : bool, no_centro : bool)
         query_vcf, truth_vcf = p.starmap(process_filter_vcf, [(v, fbed, min_sv, chrom, no_sex, canonical, only_snv, no_sv, no_indel, no_double, no_centro) for v in [input, compare]])
     
     print("Query vcf phase count: ", query_vcf[1])
     print("Query vcf unphase count: ", query_vcf[2])
     print("Truth vcf phase count: ", truth_vcf[1])
     print("Truth vcf unphase count: ", truth_vcf[2])
+    
+    print("Intersecting two vcf files")
+    test_chr = '1'
+    test = intersect(query_vcf[0][test_chr], truth_vcf[0][test_chr], test_chr, mincount, min_sv)
+    print(len(test))
+    print(test[5].left)
+    print('\n')
+    print(test[5].truthleft)
+    print('\n')
+    print(test[5].weight)
+
 
     end_time = time.time()
     print(f"ALL DONE")

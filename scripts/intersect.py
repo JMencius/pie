@@ -9,7 +9,7 @@ def preprocess_truth(truth_dict: dict) -> dict:
     block_index = 0
     for phaseblock in truth_dict:
         for r in truth_dict[phaseblock]:
-            preprocess[r.pos] = (r.ref, r.alt, block_index, r.left, r.right)
+            preprocess[r.pos] = (r.ref, r.alt, str(block_index), r.left, r.right)
 
         block_index += 1
     return preprocess
@@ -25,7 +25,7 @@ def clean_blocks(inlist: list, mincount: int) -> list:
 
 
 
-def intersect(query: dict, truth: dict, chrom: str, mincount: int) -> list:
+def intersect(query: dict, truth: dict, chrom: str, mincount: int, min_sv: int) -> list:
     blocks = list()
 
     pre_truth = preprocess_truth(truth)
@@ -34,7 +34,7 @@ def intersect(query: dict, truth: dict, chrom: str, mincount: int) -> list:
         if len(query[phaseblock]) < mincount:
             continue
 
-        tempblock = myblock(chrom, "", [], [], [], [], [], 0)
+        tempblock = myblock(chrom, "")
         for r in query[phaseblock]:
             if r.pos in pre_truth:
                 in_truth = pre_truth[r.pos]
@@ -44,24 +44,34 @@ def intersect(query: dict, truth: dict, chrom: str, mincount: int) -> list:
                     else:
                         if in_truth[2] != tempblock.idx:
                             block.append(tempblock)
-                            tempblock = myblock(chrom, in_truth[2], [], [], [], [], [], 0)
-
+                            tempblock = myblock(chrom, in_truth[2])
                     tempblock.left.append(r.left)
                     tempblock.right.append(r.right)
-                    tempblock.truthleft.append(in_truth[0])
-                    tempblock.truthright.append(in_truth[1])
+                    tempblock.truthleft.append(in_truth[3])
+                    tempblock.truthright.append(in_truth[4])
                     tempblock.count += 1
 
                     if r.category == "SNV":
                         tempblock.weight.append(1)
+                        tempblock.snv += 1
                     else:
                         alt_list = list(r.alt)
                         if len(r.alt) == 1:
-                            weight = Levenshtein.distance(r.ref, alt_list[0])
+                            weight = Levenshtein.distance(r.ref, str(alt_list[0]))
                         else:
-                            weigth = Levenshtein.distance(alt_list[0], alt_list[1])
-                        tempblock.weigth.append(weight)
-        block.append(tempblock)
-        
+                            weigth = Levenshtein.distance(str(alt_list[0]), str(alt_list[1]))
+                        
+                        tempblock.weight.append(weight)
+                        if r.category == "INDEL":
+                            tempblock.indel += 1
+                        else:
+                            if r.category == "SV":
+                                tempblock.sv += 1
 
-    return blocks
+        blocks.append(tempblock)
+
+    cleaned = clean_blocks(blocks, mincount)
+    return cleaned
+
+
+
