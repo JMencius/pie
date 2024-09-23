@@ -2,10 +2,11 @@ import click
 import sys
 import os
 import time
+import tracemalloc
 from scripts.parse_vcf import process_filter_vcf
 from scripts.intersect import intersect
+from scripts.evaluation import blockwise_evaluate
 from multiprocessing import Pool
-
 
 
 @click.command()
@@ -27,8 +28,11 @@ from multiprocessing import Pool
 @click.option("--no-centro", is_flag = True, help = "Ignore centromere region")
 @click.option("--only-num", is_flag = True, help = "Export only numbers")
 @click.option("--verbose", is_flag = True, help = "Verbose mode print intermediate results to stdout")
+@click.option("--test", is_flag = True, help = "Run test sample")
 @click.version_option(version="0.1.0", prog_name = r"phasing all-in-one evaluator(pie), based on Python 3.7+")
-def main(input, compare, ref, output, threads, fbed, min_sv, chrom, mincount, canonical, no_sex, only_snv, no_sv, no_indel, no_double, no_centro, only_num, verbose):
+def main(input, compare, ref, output, threads, fbed, min_sv, chrom, mincount, canonical, no_sex, only_snv, no_sv, no_indel, no_double, no_centro, only_num, verbose, test):
+    if verbose:
+        tracemalloc.start()
     start_time = time.time()
     
     # get aboslute path
@@ -50,10 +54,9 @@ def main(input, compare, ref, output, threads, fbed, min_sv, chrom, mincount, ca
             if param_name != "version":
                 param_value = ctx.params[param_name]
                 click.echo(f'{param_name}: {param_value}')
-            print('\n')
 
 
-    # simultaneously read two vcf files
+    # simultaneously read and filter two vcf files
     print("Start reading vcf files")
     read_threads = min(2, threads)
     with Pool(read_threads) as p:
@@ -73,13 +76,17 @@ def main(input, compare, ref, output, threads, fbed, min_sv, chrom, mincount, ca
     print(test[5].truthleft)
     print('\n')
     print(test[5].weight)
-
+    print('\n')
+    blockwise_evaluate(test[5])
 
     end_time = time.time()
     print(f"ALL DONE")
     print(f"Total processing time is {end_time - start_time} seconds.")
-
+    if verbose:
+        _, peak = tracemalloc.get_traced_memory()
+        print(f"Peak memory usage: {peak / 10**6} MB")
 
 
 if __name__ == "__main__":
     main()
+
