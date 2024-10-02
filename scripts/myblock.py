@@ -7,6 +7,7 @@ class myblock:
         self.truthleft: list = []
         self.truthright: list = []
         self.weight: list = []
+        self.length: int = 0
         self.count: int = 0
         self.snv: int = 0
         self.indel: int = 0
@@ -14,6 +15,6 @@ class myblock:
 
 
     def __str__(self) -> str:
-        return f"chromosome: {self.chrom} index: {self.idx} length: {self.count} SNV: {self.snv} INDEL: {self.indel} SV: {self.sv}"
+        return f"chromosome: {self.chrom} index: {self.idx} count: {self.count} length: {self.length} SNV: {self.snv} INDEL: {self.indel} SV: {self.sv}"
 
 

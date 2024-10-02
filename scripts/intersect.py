@@ -35,6 +35,7 @@ def intersect(query: dict, truth: dict, chrom: str, mincount: int, min_sv: int) 
             continue
 
         tempblock = myblock(chrom, "")
+        minmax = [None, None]
         for r in query[phaseblock]:
             if r.pos in pre_truth:
                 in_truth = pre_truth[r.pos]
@@ -50,6 +51,12 @@ def intersect(query: dict, truth: dict, chrom: str, mincount: int, min_sv: int) 
                     tempblock.truthleft.append(in_truth[3])
                     tempblock.truthright.append(in_truth[4])
                     tempblock.count += 1
+                    if (not minmax[0]) and (not minmax[1]):
+                        minmax[0] = r.pos
+                        minmax[1] = r.pos
+                    else:
+                        minmax[0] = min(r.pos, minmax[0])
+                        minmax[1] = max(r.pos, minmax[1])
 
                     if r.category == "SNV":
                         tempblock.weight.append(1)
@@ -67,8 +74,9 @@ def intersect(query: dict, truth: dict, chrom: str, mincount: int, min_sv: int) 
                         else:
                             if r.category == "SV":
                                 tempblock.sv += 1
-
-        blocks.append(tempblock)
+        if minmax[0] and minmax[1]:
+            tempblock.length = minmax[1] - minmax[0] + 1
+            blocks.append(tempblock)
 
     cleaned = clean_blocks(blocks, mincount)
     return cleaned

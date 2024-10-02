@@ -17,10 +17,10 @@ from scripts.myrecord import myrecord
 def gt_info(gt_tag : str) -> tuple:
     isphased = '|' in gt_tag
     isdouble = '2' in gt_tag
+    isok = False
     if gt_tag[0].isdigit() and gt_tag[2].isdigit():
-        isok = True
-    else:
-        isok = False
+        if gt_tag[0] != gt_tag[2]:
+            isok = True
 
     return (isphased, isdouble, isok)
 
@@ -95,6 +95,7 @@ def process_filter_vcf(filename: str, fbed: str, min_sv: int, chrom: set, no_sex
         if chr_str in chrom_str:
             for sample in record.samples:
                 filter_flag = filter_record(record, fbed, min_sv, chrom, no_sex, canonical, only_snv, no_sv, no_indel, no_double, no_centro)
+                #print(record, filter_flag)
                 if filter_flag:
                     # parse vcf only according to GT tag
                     if readmode == "GT":
@@ -112,6 +113,11 @@ def process_filter_vcf(filename: str, fbed: str, min_sv: int, chrom: set, no_sex
                                                 sample["GT"][0],
                                                 sample["GT"][2],
                                                 category)
+                                    
+                                    #if chr_str == "1":
+                                    #    print(this_record)
+
+
                                     if "UNIFY" not in output[chr_str]:
                                         output[chr_str]["UNIFY"] = list()
                                     output[chr_str]["UNIFY"].append(this_record)

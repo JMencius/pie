@@ -6,6 +6,7 @@ import tracemalloc
 from scripts.parse_vcf import process_filter_vcf
 from scripts.intersect import intersect
 from scripts.evaluation import blockwise_evaluate
+from scripts.output import write_or_print
 from multiprocessing import Pool
 
 
@@ -33,7 +34,7 @@ from multiprocessing import Pool
 def main(input, compare, ref, output, threads, fbed, min_sv, chrom, mincount, canonical, no_sex, only_snv, no_sv, no_indel, no_double, no_centro, only_num, verbose, test):
     if verbose:
         tracemalloc.start()
-    start_time = time.time()
+        start_time = time.time()
     
     # get aboslute path
     input = os.path.abspath(input)
@@ -43,7 +44,16 @@ def main(input, compare, ref, output, threads, fbed, min_sv, chrom, mincount, ca
     output = os.path.abspath(output)
     
     # process chromosome area
-    chrom = set(chrom.split(','))
+    chrom = [i.upper() for i in chrom.split(',')]
+    if no_sex:
+        if 'X' in chrom:
+            chrom.remove('X')
+        if 'Y' in chrom:
+            chrom.remove('Y')
+    chrom.sort(key = lambda K:int(K))
+    if verbose:
+        print(f"Current working chromosome is {chrom}")
+
 
     # print parameters in verbose mode
     if verbose:
@@ -58,7 +68,7 @@ def main(input, compare, ref, output, threads, fbed, min_sv, chrom, mincount, ca
 
     # simultaneously read and filter two vcf files
     print("Start reading vcf files")
-    read_threads = min(2, threads)
+    read_threads = min(3, threads)
     with Pool(read_threads) as p:
         query_vcf, truth_vcf = p.starmap(process_filter_vcf, [(v, fbed, min_sv, chrom, no_sex, canonical, only_snv, no_sv, no_indel, no_double, no_centro) for v in [input, compare]])
     
@@ -68,23 +78,24 @@ def main(input, compare, ref, output, threads, fbed, min_sv, chrom, mincount, ca
     print("Truth vcf unphase count: ", truth_vcf[2])
     
     print("Intersecting two vcf files")
-    test_chr = '1'
-    test = intersect(query_vcf[0][test_chr], truth_vcf[0][test_chr], test_chr, mincount, min_sv)
-    print(len(test))
-    print(test[5].left)
+    with Pool(threads) as q:
+        intersect_results = q.starmap(intersect, [(query_vcf[0][t_chr], truth_vcf[0][t_chr], t_chr, mincount, min_sv) for t_chr in chrom])
+    
+    print(intersect_results[0])
+    with Pool(threads) as r:
+        evaluation_results = r.starmap(blockwise_evaluate, [(intersect_results[i], i) for i in range(len(intersect_results))])
+    
     print('\n')
-    print(test[5].truthleft)
-    print('\n')
-    print(test[5].weight)
-    print('\n')
-    blockwise_evaluate(test[5])
+    for i in evaluation_results:
+        print(i)
 
-    end_time = time.time()
-    print(f"ALL DONE")
-    print(f"Total processing time is {end_time - start_time} seconds.")
+
     if verbose:
+        end_time = time.time()
+        print(f"ALL DONE")
+        print(f"Total processing time is {end_time - start_time} seconds.")
         _, peak = tracemalloc.get_traced_memory()
-        print(f"Peak memory usage: {peak / 10**6} MB")
+        print(f"Peak memory usage: {peak / 1024**3} GB")
 
 
 if __name__ == "__main__":
