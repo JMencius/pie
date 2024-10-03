@@ -121,7 +121,8 @@ def blockwise_evaluate(chrom_block: list, idx: int) -> dict:
             "total_se": total_se,
             "total_event": total_event,
             "total_present": total_present,
-            "total_ghd": total_ghd}
+            "total_ghd": total_ghd,
+            "length_list": len_list}
 
 
 

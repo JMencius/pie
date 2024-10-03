@@ -173,6 +173,10 @@ def process_filter_vcf(filename: str, fbed: str, min_sv: int, chrom: set, no_sex
     return (output, phase_count, unphase_count)
                         
 
+def get_sample_name(vcffile: str) -> str:
+    vcf_reader = vcf.Reader(open(vcffile, 'r'))
+    return vcf_reader.samples[0]
+
 
 """
 ## test code
