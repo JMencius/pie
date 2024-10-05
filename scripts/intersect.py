@@ -44,7 +44,7 @@ def intersect(query: dict, truth: dict, chrom: str, mincount: int, min_sv: int) 
                         tempblock.idx = in_truth[2]
                     else:
                         if in_truth[2] != tempblock.idx:
-                            block.append(tempblock)
+                            blocks.append(tempblock)
                             tempblock = myblock(chrom, in_truth[2])
                     tempblock.left.append(r.left)
                     tempblock.right.append(r.right)
