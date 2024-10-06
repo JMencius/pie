@@ -105,17 +105,15 @@ def process_filter_vcf(filename: str, fbed: str, min_sv: int, chrom: set, no_sex
                             category = get_category(record.REF, ','.join([str(i) for i in record.ALT]), min_sv)
                             if category != "UNKNOWN":
                                 if isphased:
-                                    this_record = myrecord(chr_str, 
-                                               int(record.POS), 
+                                    if sample["GT"][0].isdigit and sample["GT"][2].isdigit:
+                                        this_record = myrecord(chr_str, 
+                                                int(record.POS), 
                                                 record.REF, 
                                                 set([str(i) for i in record.ALT]), 
                                                 "UNIFY", 
                                                 sample["GT"][0],
                                                 sample["GT"][2],
                                                 category)
-                                    
-                                    #if chr_str == "1":
-                                    #    print(this_record)
 
 
                                     if "UNIFY" not in output[chr_str]:
@@ -155,7 +153,8 @@ def process_filter_vcf(filename: str, fbed: str, min_sv: int, chrom: set, no_sex
                                     if "PS" in f"{sample.data}":
                                         if sample["PS"] != '.' and sample["PS"]:
                                             if isphased:
-                                                this_record = myrecord(chr_str,
+                                                if sample["GT"][0].isdigit and sample["GT"][2].isdigit:
+                                                    this_record = myrecord(chr_str,
                                                         int(record.POS),
                                                         record.REF,
                                                         set([str(i) for i in record.ALT]),

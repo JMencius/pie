@@ -84,15 +84,24 @@ def cal_GHD(weight_list: list, hamming_list: list) -> tuple:
 
 
 
-def blockwise_evaluate(chrom_block: list, idx: int) -> dict:
+def blockwise_evaluate(chrom_block: list, idx: int, verbose: bool) -> dict:
     # return tuple is (median, Switch Error, Generalized Hamming Distance)
     result_list = list()
     len_list = list()
+    total_snv, total_indel, total_sv = 0, 0, 0
+    total_block = 0
     total_phase = 0
     total_se, total_event = 0, 0
     total_present, total_ghd = 0, 0
     for in_block in chrom_block:
-        print(in_block)
+        if verbose:
+            print(in_block)
+        total_block += 1
+        total_snv += in_block.snv
+        total_indel += in_block.indel
+        total_sv += in_block.sv
+        
+
         total_phase += in_block.count
         len_list.append(in_block.length)
         query: str = ''.join(in_block.left)
@@ -122,8 +131,11 @@ def blockwise_evaluate(chrom_block: list, idx: int) -> dict:
             "total_event": total_event,
             "total_present": total_present,
             "total_ghd": total_ghd,
-            "length_list": len_list}
-
+            "length_list": len_list,
+            "total_snv": total_snv,
+            "total_indel": total_indel,
+            "total_sv": total_sv,
+            "total_block": total_block}
 
 
 

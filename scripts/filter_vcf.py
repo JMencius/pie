@@ -1,6 +1,11 @@
 import os
 import sys
 import vcf
+import re
+
+def is_all_alpha(s):
+    return bool(re.fullmatch(r'[A-Za-z]+', s))
+
 
 ##
 #!--------Devlopment log--------!#
@@ -16,15 +21,6 @@ def read_bed(filename : str) -> dict:
 
 
 def filter_record(record, fbed : str, min_sv : int, chrom : set, no_sex : bool, canonical : bool, only_snv : bool, no_sv : bool, no_indel : bool, no_double : bool, no_centro : bool) -> bool:
-    # some quality control step
-    for i in record.REF:
-        if not i.isalpha():
-            return False
-
-    for i in record.ALT:
-        for j in str(i):
-            if not j.isalpha():
-                return False
 
     # read fbed files
     ##PENDING
@@ -68,5 +64,13 @@ def filter_record(record, fbed : str, min_sv : int, chrom : set, no_sex : bool, 
 
     if no_centro:
         pass
+    
+    # some quality control step
+    if not(is_all_alpha(str(record.REF))):
+        return False
+
+    for i in record.ALT:
+        if not(is_all_alpha(str(i))):
+            return False
 
     return True

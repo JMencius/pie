@@ -11,6 +11,7 @@ from scripts.write_results import write_results
 from scripts.cal_ref import cal_total_ref
 from scripts.overall_metrics import cal_NGx0
 from multiprocessing import Pool
+from scripts.sort_key import sort_key
 
 PWD = os.path.dirname(os.path.realpath(__file__))
 
@@ -19,7 +20,7 @@ PWD = os.path.dirname(os.path.realpath(__file__))
 @click.option("-n", "--name", default = None, help = "User defined sample name of the input vcf file, [default: `extract from vcf`]")
 @click.option("-c", "--compare", required = True, help = "Truth vcf/bcf file for comparsion")
 @click.option("-r", "--ref", default = f"{os.path.join(PWD, 'ref', 'GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta')}", help = "Reference file [default:GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta]")
-@click.option("-o", "--output", required = True, help = "Output tsv file name")
+@click.option("-o", "--output", required = True, help = "Output tsv file prefix, path can be added before the prefix, such as -o /test/output_name")
 @click.option("-t", "--threads", default = 24, help = "Maximum numbers of parallel threads")
 @click.option("--fbed", default = None, help = r"Bed file to filter out, such as centromere region in data/hg38_centromere.bed")
 @click.option("--min-sv", default = 30, help = "Minimal length of Structral Variant")
@@ -34,7 +35,7 @@ PWD = os.path.dirname(os.path.realpath(__file__))
 @click.option("--no-centro", is_flag = True, help = "Ignore centromere region")
 @click.option("--verbose", is_flag = True, help = "Verbose mode print intermediate results to stdout")
 @click.option("--test", is_flag = True, help = "Run test sample")
-@click.version_option(version="es-0.1.0", prog_name = r"phasing all-in-one evaluator(pie), based on Python 3.7+")
+@click.version_option(version="es-0.1.1", prog_name = r"phasing all-in-one evaluator(pie), based on Python 3.7+")
 def main(input, name, compare, ref, output, threads, fbed, min_sv, chrom, mincount, canonical, no_sex, only_snv, no_sv, no_indel, no_double, no_centro, verbose, test):
     if verbose:
         start_time = time.time()
@@ -51,7 +52,7 @@ def main(input, name, compare, ref, output, threads, fbed, min_sv, chrom, mincou
             chrom.remove('X')
         if 'Y' in chrom:
             chrom.remove('Y')
-    chrom.sort(key = lambda K:int(K))
+    chrom.sort(key = sort_key)
     if verbose:
         print(f"Current working chromosome is {chrom}")
 
@@ -74,6 +75,7 @@ def main(input, name, compare, ref, output, threads, fbed, min_sv, chrom, mincou
         query_vcf, truth_vcf = p.starmap(process_filter_vcf, [(v, fbed, min_sv, chrom, no_sex, canonical, only_snv, no_sv, no_indel, no_double, no_centro) for v in [input, compare]])
     
     if verbose:
+        print(r"Output format in list is [#single_count, #double_count]")
         print("Query vcf phase count: ", query_vcf[1])
         print("Query vcf unphase count: ", query_vcf[2])
         print("Truth vcf phase count: ", truth_vcf[1])
@@ -85,13 +87,7 @@ def main(input, name, compare, ref, output, threads, fbed, min_sv, chrom, mincou
     
     print("Evluating blocks")
     with Pool(threads) as r:
-        evaluation_results = r.starmap(blockwise_evaluate, [(intersect_results[i], i) for i in range(len(intersect_results))])
-    
-    print('\n')
-    if verbose:
-        for i in range(len(evaluation_results)):
-            print(chrom[i], end = '\t')
-            print(i)
+        evaluation_results = r.starmap(blockwise_evaluate, [(intersect_results[i], i, verbose) for i in range(len(intersect_results))])
     
     print("Calculating NG50 and NG90")
     total_ref_len = cal_total_ref(ref, chrom)
