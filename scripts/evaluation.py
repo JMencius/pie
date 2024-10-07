@@ -93,7 +93,9 @@ def blockwise_evaluate(chrom_block: list, idx: int, verbose: bool) -> dict:
     total_phase = 0
     total_se, total_event = 0, 0
     total_present, total_ghd = 0, 0
+    present_chrom = None
     for in_block in chrom_block:
+        present_chrom = in_block.chrom
         if verbose:
             print(in_block)
         total_block += 1
@@ -122,8 +124,12 @@ def blockwise_evaluate(chrom_block: list, idx: int, verbose: bool) -> dict:
         present_ghd, total_present = cal_GHD(in_block.weight, compare_list)
         total_present += present_ghd
         total_ghd += total_present
-
-    length_median = statistics.median(len_list)
+    
+    if len(len_list) > 0:
+        length_median = statistics.median(len_list)
+    else:
+        length_median = None
+        print(f"CRITIAL WARNING: No phase block in chromosome {present_chrom}, please check the vcfs")
 
     return {"total_phase": total_phase,
             "length_median": length_median,

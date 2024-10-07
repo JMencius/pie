@@ -66,7 +66,7 @@ def intersect(query: dict, truth: dict, chrom: str, mincount: int, min_sv: int) 
                         if len(r.alt) == 1:
                             weight = Levenshtein.distance(r.ref, str(alt_list[0]))
                         else:
-                            weigth = Levenshtein.distance(str(alt_list[0]), str(alt_list[1]))
+                            weight = abs(Levenshtein.distance(str(alt_list[0]), str(alt_list[1])))
                         
                         tempblock.weight.append(weight)
                         if r.category == "INDEL":
