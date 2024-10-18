@@ -96,7 +96,7 @@ def main(input, name, compare, ref, output, threads, fbed, min_sv, chrom, mincou
     print("Intersecting two vcf files")
     with Pool(threads) as q:
         intersect_results = q.starmap(intersect, [(query_vcf[t_chr], truth_vcf[t_chr], t_chr, mincount, min_sv) for t_chr in chrom])
-
+    
     print("Evluating blocks")
     with Pool(threads) as r:
         evaluation_results = r.starmap(blockwise_evaluate, [(intersect_results[i], i, verbose) for i in range(len(intersect_results))])

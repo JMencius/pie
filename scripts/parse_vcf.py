@@ -155,7 +155,7 @@ def read_vcf(filename1: str, filename2: str, target: list, min_sv: int, chrom: l
         for c in target:
             file_chrom.append((f, c))
     
-    print(file_chrom)
+    ##print(file_chrom)
 
     with Pool(threads) as rd:
         temp_read = rd.starmap(process_filter_vcf, [(i, j[0], j[1], j[2], min_sv, no_sex, canonical, only_snv, no_sv, no_indel, no_double, no_centro) for i,j in file_chrom])

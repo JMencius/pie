@@ -96,6 +96,7 @@ def blockwise_evaluate(chrom_block: list, idx: int, verbose: bool) -> dict:
     present_chrom = None
     for in_block in chrom_block:
         #print(in_block)
+        #print(in_block.weight)
         present_chrom = in_block.chrom
         total_block += 1
         total_snv += in_block.snv
@@ -109,21 +110,23 @@ def blockwise_evaluate(chrom_block: list, idx: int, verbose: bool) -> dict:
         truth: str = ''.join(in_block.truthleft)
     
         hd = c_hamming_distance(query, truth)
+
         if hd > 0.5 * len(query):
             query: str = ''.join(in_block.right)
             hd = c_hamming_distance(query, truth)
         compare_list = hamming_comparison(query, truth)
-        
+
         # calculate switch error rate
         se_count, event_count = cal_SE(compare_list)
         total_se += se_count
         total_event += event_count
         
         # calculate generalized hamming distance
-        present_ghd, total_present = cal_GHD(in_block.weight, compare_list)
-        total_present += present_ghd
-        total_ghd += total_present
-    
+        current_ghd, current_present = cal_GHD(in_block.weight, compare_list)
+        total_present += current_ghd
+        total_ghd += current_present
+        
+
     if len(len_list) > 0:
         length_median = statistics.median(len_list)
     else:
