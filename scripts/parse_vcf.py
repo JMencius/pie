@@ -3,24 +3,22 @@ import os
 import sys
 from scripts.filter_vcf import filter_record
 from scripts.myrecord import myrecord
-
-##++++++++++++++++++
-## Development log
-## 2024. Aug. 29
-## more quality control step to be added
-##++++++++++++++++++
-
-
-
+from multiprocessing import Pool
 
 
 def gt_info(gt_tag : str) -> tuple:
     isphased = '|' in gt_tag
-    isdouble = '2' in gt_tag
+    if not isphased:
+        return (False, None, False)
+
     isok = False
     if gt_tag[0].isdigit() and gt_tag[2].isdigit():
         if gt_tag[0] != gt_tag[2]:
             isok = True
+    if not isok:
+        return (True, None, False)
+
+    isdouble = '2' in gt_tag
 
     return (isphased, isdouble, isok)
 
@@ -57,12 +55,7 @@ def get_category(ref_tag : str, alt_tag : list, min_sv : int) -> str:
 
 
 
-def process_filter_vcf(filename: str, fbed: str, min_sv: int, chrom: set, no_sex : bool, canonical : bool, only_snv : bool, no_sv : bool, no_indel : bool, no_double : bool, no_centro : bool) -> tuple:
-    chrom_str = {str(i) for i in chrom}
-    phase_count = {i : {"SNV": [0, 0], "INDEL": [0, 0], "SV": [0, 0]} for i in chrom_str}
-    unphase_count = {i : {"SNV": [0, 0], "INDEL": [0, 0], "SV": [0, 0]} for i in chrom_str}
-
-    output = {i : dict() for i in chrom_str}
+def process_filter_vcf(filename: str, target_chrom: str, start: int, end: int, min_sv: int, no_sex : bool, canonical : bool, only_snv : bool, no_sv : bool, no_indel : bool, no_double : bool, no_centro : bool) -> dict:
 
     vcf_reader = vcf.Reader(open(filename, 'r'))
     for i in vcf_reader.formats:
@@ -85,16 +78,22 @@ def process_filter_vcf(filename: str, fbed: str, min_sv: int, chrom: set, no_sex
             print(f"WARNING PS tag not in vcf/bcf file, the whole chromosome will be treated as a completely phased")
         else:
             readmode = "PS"
-    print(f"read mode is {readmode}")
-
+    #print(f"read mode is {readmode}")
+    
+    output = {target_chrom : dict()}
 
     count = 0
+    flag = 0
     for record in vcf_reader:
         # for chromosome parsing
         chr_str = record.CHROM[3:]
-        if chr_str in chrom_str:
+        if (chr_str != target_chrom) and (flag == 1):
+            break
+
+        if chr_str == target_chrom:
+            flag = 1
             for sample in record.samples:
-                filter_flag = filter_record(record, fbed, min_sv, chrom, no_sex, canonical, only_snv, no_sv, no_indel, no_double, no_centro)
+                filter_flag = filter_record(record, min_sv, no_sex, canonical, only_snv, no_sv, no_indel, no_double, no_centro)
                 #print(record, filter_flag)
                 if filter_flag:
                     # parse vcf only according to GT tag
@@ -121,36 +120,13 @@ def process_filter_vcf(filename: str, fbed: str, min_sv: int, chrom: set, no_sex
                                     output[chr_str]["UNIFY"].append(this_record)
 
 
-                                    if isdouble:
-                                        phase_count[chr_str][category][1] += 1
-                                    else:
-                                        phase_count[chr_str][category][0] += 1
-                                else:
-                                    if isdouble:
-                                        unphase_count[chr_str][category][1] += 1
-                                    else:
-                                        unphase_count[chr_str][category][0] += 1
-
-                
                     # parse vcf according to PS tag and GT tag
                     else:
                         if "GT" in f"{sample.data}":
                             isphased, isdouble, isok = gt_info(sample["GT"])
                             if isok:
                                 category = get_category(record.REF, ','.join([str(i) for i in record.ALT]), min_sv)
-                                if category != "UNKNOWN":
-                                    if isphased:
-                                        if isdouble:
-                                            phase_count[chr_str][category][1] += 1
-                                        else:
-                                            phase_count[chr_str][category][0] += 1
-                                    else:
-                                        if isdouble:
-                                            unphase_count[chr_str][category][1] += 1
-                                        else:
-                                            unphase_count[chr_str][category][0] += 1
-
-                                    if "PS" in f"{sample.data}":
+                                if category != "UNKNOWN" and "PS" in f"{sample.data}":
                                         if sample["PS"] != '.' and sample["PS"]:
                                             if isphased:
                                                 if sample["GT"][0].isdigit and sample["GT"][2].isdigit:
@@ -168,23 +144,37 @@ def process_filter_vcf(filename: str, fbed: str, min_sv: int, chrom: set, no_sex
                                                 output[chr_str][sample["PS"]].append(this_record)
 
 
+    return output
+ 
 
-    return (output, phase_count, unphase_count)
-                        
+def read_vcf(filename1: str, filename2: str, target: list, min_sv: int, chrom: list, no_sex: bool, canonical: bool, only_snv: bool, no_sv: bool, no_indel: bool, no_double: bool, no_centro: bool, threads: int) -> tuple:
+    
+    # join target file and target chromosome
+    file_chrom = list()
+    for f in [filename1, filename2]:
+        for c in target:
+            file_chrom.append((f, c))
+    
+    print(file_chrom)
+
+    with Pool(threads) as rd:
+        temp_read = rd.starmap(process_filter_vcf, [(i, j[0], j[1], j[2], min_sv, no_sex, canonical, only_snv, no_sv, no_indel, no_double, no_centro) for i,j in file_chrom])
+    
+    file1_assemble = dict()
+    file2_assemble = dict()
+    for count in range(len(file_chrom)):
+        if file_chrom[count][0] == filename1:
+            file1_assemble.update(temp_read[count])
+        else:
+            file2_assemble.update(temp_read[count])
+
+
+    return (file1_assemble, file2_assemble)
+
+
 
 def get_sample_name(vcffile: str) -> str:
     vcf_reader = vcf.Reader(open(vcffile, 'r'))
     return vcf_reader.samples[0]
 
 
-"""
-## test code
-if __name__ == "__main__":
-    output = process_vcf(sys.argv[1], {1}, 30)
-    count = 0
-    for i in output['1']["UNIFY"]:
-        count += 1
-        print(i)
-        if count == 10:
-            sys.exit(0)
-"""

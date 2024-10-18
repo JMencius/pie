@@ -3,7 +3,7 @@ import os
 import sys
 
 
-def cal_total_ref(ref: str, chrom: list) -> int:
+def cal_total_ref(ref: str, chrom: list) -> dict:
     suffix = os.path.splitext(ref)[1]
     if suffix == ".fa" or suffix == ".fasta":
         total_length = fasta_mode(ref, chrom)
@@ -28,16 +28,16 @@ def clean(in_name: str) -> str:
 
 
 def fasta_mode(ref: str, chrom: list) -> int:
-    chr_len = list()
+    chr_len = dict()
     exist = set()
     for name, seq in pyfastx.Fasta(ref, build_index = False):
         clean_name = clean(name)
         if clean_name in chrom:
-            chr_len.append(len(seq))
+            chr_len[clean_name] = len(seq)
             exist.add(clean_name)
 
     if len(chr_len) == len(chrom):
-        return sum(chr_len)
+        return chr_len
     else:
         for i in chrom:
             if i not in exist:
@@ -46,8 +46,8 @@ def fasta_mode(ref: str, chrom: list) -> int:
         return -1
 
 
-def fai_mode(ref_fai: str, chrom: list) -> int:
-    chr_len = list()
+def fai_mode(ref_fai: str, chrom: list) -> dict:
+    chr_len = dict()
     exist = set()
     with open(ref_fai, 'r') as f:
         for line in f:
@@ -55,11 +55,11 @@ def fai_mode(ref_fai: str, chrom: list) -> int:
             if len(m) >= 2:
                 clean_name = clean(m[0])
                 if clean_name in chrom:
-                    chr_len.append(int(m[1]))
+                    chr_len[clean_name] = int(m[1])
                     exist.add(clean_name)
 
     if len(chr_len) == len(chrom):
-        return sum(chr_len)
+        return chr_len
     else:
         for i in chrom:
             if i not in exist:

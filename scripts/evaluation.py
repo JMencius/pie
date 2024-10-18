@@ -95,9 +95,8 @@ def blockwise_evaluate(chrom_block: list, idx: int, verbose: bool) -> dict:
     total_present, total_ghd = 0, 0
     present_chrom = None
     for in_block in chrom_block:
+        #print(in_block)
         present_chrom = in_block.chrom
-        if verbose:
-            print(in_block)
         total_block += 1
         total_snv += in_block.snv
         total_indel += in_block.indel

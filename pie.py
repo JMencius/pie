@@ -3,7 +3,7 @@ import sys
 import os
 import time
 import tracemalloc
-from scripts.parse_vcf import process_filter_vcf
+from scripts.parse_vcf import read_vcf
 from scripts.parse_vcf import get_sample_name
 from scripts.intersect import intersect
 from scripts.evaluation import blockwise_evaluate
@@ -12,6 +12,9 @@ from scripts.cal_ref import cal_total_ref
 from scripts.overall_metrics import cal_NGx0
 from multiprocessing import Pool
 from scripts.sort_key import sort_key
+from scripts.read_bed import read_bed
+
+
 
 PWD = os.path.dirname(os.path.realpath(__file__))
 
@@ -35,7 +38,7 @@ PWD = os.path.dirname(os.path.realpath(__file__))
 @click.option("--no-centro", is_flag = True, help = "Ignore centromere region")
 @click.option("--verbose", is_flag = True, help = "Verbose mode print intermediate results to stdout")
 @click.option("--test", is_flag = True, help = "Run test sample")
-@click.version_option(version="es-0.1.1", prog_name = r"phasing all-in-one evaluator(pie), based on Python 3.7+")
+@click.version_option(version="es-0.2.0", prog_name = r"phasing all-in-one evaluator(pie), based on Python 3.7+")
 def main(input, name, compare, ref, output, threads, fbed, min_sv, chrom, mincount, canonical, no_sex, only_snv, no_sv, no_indel, no_double, no_centro, verbose, test):
     if verbose:
         start_time = time.time()
@@ -44,6 +47,8 @@ def main(input, name, compare, ref, output, threads, fbed, min_sv, chrom, mincou
     input = os.path.abspath(input)
     compare = os.path.abspath(compare)
     ref = os.path.abspath(ref)
+    if fbed:
+        fbed = os.path.abspath(fbed)
     
     # process chromosome area
     chrom = [i.upper() for i in chrom.split(',')]
@@ -64,27 +69,34 @@ def main(input, name, compare, ref, output, threads, fbed, min_sv, chrom, mincou
         for param in ctx.command.params:
             param_name = param.name
             if param_name != "version":
+                if param_name == "chrom":
+                    click.echo(f"chrom: {chrom}")
+                    continue
                 param_value = ctx.params[param_name]
                 click.echo(f'{param_name}: {param_value}')
-
-
-    # simultaneously read and filter two vcf files
-    print("Start reading vcf files")
-    read_threads = min(2, threads)
-    with Pool(read_threads) as p:
-        query_vcf, truth_vcf = p.starmap(process_filter_vcf, [(v, fbed, min_sv, chrom, no_sex, canonical, only_snv, no_sv, no_indel, no_double, no_centro) for v in [input, compare]])
     
-    if verbose:
-        print(r"Output format in list is [#single_count, #double_count]")
-        print("Query vcf phase count: ", query_vcf[1])
-        print("Query vcf unphase count: ", query_vcf[2])
-        print("Truth vcf phase count: ", truth_vcf[1])
-        print("Truth vcf unphase count: ", truth_vcf[2])
+    # get target area
+    if fbed:
+        target = read_bed(fbed)
+    else:
+        temp_target = cal_total_ref(ref, chrom)
+        target = list()
+        for i, j in temp_target.items():
+            target.append([i, 0, j - 1])
     
+    if verbose and fbed:
+        print("Target area is: \n")
+        for i in target:
+            print(i)
+
+    # read and filter two vcf files
+    print("Reading query and truth vcf file")
+    query_vcf, truth_vcf = read_vcf(input, compare, target, min_sv, chrom, no_sex, canonical, only_snv, no_sv, no_indel, no_double, no_centro, threads)
+
     print("Intersecting two vcf files")
     with Pool(threads) as q:
-        intersect_results = q.starmap(intersect, [(query_vcf[0][t_chr], truth_vcf[0][t_chr], t_chr, mincount, min_sv) for t_chr in chrom])
-    
+        intersect_results = q.starmap(intersect, [(query_vcf[t_chr], truth_vcf[t_chr], t_chr, mincount, min_sv) for t_chr in chrom])
+
     print("Evluating blocks")
     with Pool(threads) as r:
         evaluation_results = r.starmap(blockwise_evaluate, [(intersect_results[i], i, verbose) for i in range(len(intersect_results))])

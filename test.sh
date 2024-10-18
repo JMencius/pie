@@ -1,7 +1,8 @@
 #!/bin/bash
 
 python pie.py \
--i ./test-data/longphase_HG01109.vcf \
--c ./test-data/HG01109.f1_assembly_v2.dip.vcf \
--o ~/test/HG01109_longphase_test \
+-i ./test-data/HG002/HG002.pacbio.WhatsHap.concated.variants.phased.vcf \
+-c ./test-data/HG002/HG002_GRCh38_1_22_v4.2.1_benchmark_hifiasm_v11_phasetransfer.vcf \
+-o ./output/HG002 \
+--no-sex \
 --verbose;

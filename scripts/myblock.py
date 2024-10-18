@@ -12,9 +12,11 @@ class myblock:
         self.snv: int = 0
         self.indel: int = 0
         self.sv: int = 0
+        self.start: int = None
+        self.end: int = None
 
 
     def __str__(self) -> str:
-        return f"chromosome: {self.chrom} index: {self.idx} count: {self.count} length: {self.length} SNV: {self.snv} INDEL: {self.indel} SV: {self.sv}"
+        return f"chromosome: {self.chrom} Start: {self.start} End: {self.end} index: {self.idx} count: {self.count} length: {self.length} SNV: {self.snv} INDEL: {self.indel} SV: {self.sv}"
 
 
