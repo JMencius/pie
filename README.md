@@ -23,7 +23,7 @@ Options:
                          data/hg38_centromere.bed
   --min-sv INTEGER       Minimal length of Structral Variant
   --chrom TEXT           Chromosome to evaluate,use comma to connect e.g.
-                         --chrom 1,2,3 [default:1-23, X, Y]
+                         --chrom 1,2,3 [default:1-22, X, Y]
   --mincount INTEGER     Minimum numbers of phased sites in a phase block
                          [default: 2]
   --no-sex               Ignore sex chromosome
