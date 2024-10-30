@@ -10,6 +10,8 @@ from scripts.evaluation import blockwise_evaluate
 from scripts.write_results import write_results
 from scripts.cal_ref import cal_total_ref
 from scripts.overall_metrics import cal_NGx0
+from scripts.cal_truth_metrics import cal_truth_pairs
+from scripts.F1_related import cal_F1_related
 from multiprocessing import Pool
 from scripts.sort_key import sort_key
 from scripts.read_bed import read_bed
@@ -22,14 +24,14 @@ PWD = os.path.dirname(os.path.realpath(__file__))
 @click.option("-i", "--input", required = True, help = "Input vcf/bcf file for evaluation")
 @click.option("-n", "--name", default = None, help = "User defined sample name of the input vcf file, [default: `extract from vcf`]")
 @click.option("-c", "--compare", required = True, help = "Truth vcf/bcf file for comparsion")
-@click.option("-r", "--ref", default = f"{os.path.join(PWD, 'ref', 'GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta')}", help = "Reference file [default:GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta]")
+@click.option("-r", "--ref", required = True, help = "Reference file fasta or fasta.fai")
 @click.option("-o", "--output", required = True, help = "Output tsv file prefix, path can be added before the prefix, such as -o /test/output_name")
 @click.option("-t", "--threads", default = 24, help = "Maximum numbers of parallel threads")
 @click.option("--fbed", default = None, help = r"Bed file to filter out, such as centromere region in data/hg38_centromere.bed")
 @click.option("--min-sv", default = 30, help = "Minimal length of Structral Variant")
 @click.option("--chrom", default = ','.join([str(i) for i in range(1, 23)] + ['X', 'Y']), help = "Chromosome to evaluate,use comma to connect e.g. --chrom 1,2,3 [default:1-23, X, Y]")
 @click.option("--mincount", default = 2, help = "Minimum numbers of phased sites in a phase block [default: 2]")
-@click.option("--no-sex", is_flag = True, help = "Ignore sex chromosome")
+@click.option("--no-sex", is_flag = True, default = True, help = "Ignore sex chromosome")
 @click.option("--canonical", is_flag = True, help = "Canonical mode, only evaluate single mutation SNV")
 @click.option("--only-snv", is_flag = True, help = "Only evaluate Single Nucleotide Variation")
 @click.option("--no-sv", is_flag = True, help = "Ignore Structural Variant")
@@ -38,7 +40,7 @@ PWD = os.path.dirname(os.path.realpath(__file__))
 @click.option("--no-centro", is_flag = True, help = "Ignore centromere region")
 @click.option("--verbose", is_flag = True, help = "Verbose mode print intermediate results to stdout")
 @click.option("--test", is_flag = True, help = "Run test sample")
-@click.version_option(version="es-0.2.0", prog_name = r"phasing all-in-one evaluator(pie), based on Python 3.7+")
+@click.version_option(version="es-0.3.0", prog_name = r"phasing all-in-one evaluator(pie), based on Python 3.7+")
 def main(input, name, compare, ref, output, threads, fbed, min_sv, chrom, mincount, canonical, no_sex, only_snv, no_sv, no_indel, no_double, no_centro, verbose, test):
     if verbose:
         start_time = time.time()
@@ -92,7 +94,13 @@ def main(input, name, compare, ref, output, threads, fbed, min_sv, chrom, mincou
     # read and filter two vcf files
     print("Reading query and truth vcf file")
     query_vcf, truth_vcf = read_vcf(input, compare, target, min_sv, chrom, no_sex, canonical, only_snv, no_sv, no_indel, no_double, no_centro, threads)
+    
+    # calculate truth metrics
+    print("Calculating truth metrics")
 
+    with Pool(threads) as t: 
+        pairs_results = t.map(cal_truth_pairs, [truth_vcf[t_chr] for t_chr in chrom])
+    
     print("Intersecting two vcf files")
     with Pool(threads) as q:
         intersect_results = q.starmap(intersect, [(query_vcf[t_chr], truth_vcf[t_chr], t_chr, mincount, min_sv) for t_chr in chrom])
@@ -109,6 +117,9 @@ def main(input, name, compare, ref, output, threads, fbed, min_sv, chrom, mincou
     phase_len.sort(reverse = True)
     NG50 = cal_NGx0(phase_len, total_ref_len, 50)
     NG90 = cal_NGx0(phase_len, total_ref_len, 90)
+    
+    # calculate F1-score
+    evaluation_results = cal_F1_related(pairs_results, evaluation_results)
     
     # Output to files
     if (not name):

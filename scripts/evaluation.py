@@ -1,7 +1,11 @@
 import ctypes
 import statistics
 import os
+import sys
 from scripts.myblock import myblock
+from collections import deque
+from typing import Deque
+
 
 ##N50, NG50, NG90, Switch Error, Generalize hamming distance, phasing percentage
 
@@ -70,6 +74,27 @@ def cal_SE(hamming_list: list) -> tuple:
     return (se_count, event_count)
 
 
+def cal_pse(query: Deque[str], truth: Deque[str]) -> tuple:
+    """
+    calculate pairwise swtich error(pse)
+    """
+    q = query.copy()
+    t = truth.copy()
+    error = 0
+    event = 0
+    while len(q) > 1:
+        #print(q, t)
+        q_left = q.popleft()
+        t_left = t.popleft()
+        dist = c_hamming_distance(''.join(q), ''.join(t))
+        #print(dist)
+        if q_left != t_left:
+            dist = len(q) - dist
+        event += len(q)
+        error += dist
+
+    return (error, event)
+
 
 def cal_GHD(weight_list: list, hamming_list: list) -> tuple:
     """
@@ -93,6 +118,7 @@ def blockwise_evaluate(chrom_block: list, idx: int, verbose: bool) -> dict:
     total_phase = 0
     total_se, total_event = 0, 0
     total_present, total_ghd = 0, 0
+    pse, pse_event = 0, 0
     present_chrom = None
     for in_block in chrom_block:
         #print(in_block)
@@ -120,6 +146,11 @@ def blockwise_evaluate(chrom_block: list, idx: int, verbose: bool) -> dict:
         se_count, event_count = cal_SE(compare_list)
         total_se += se_count
         total_event += event_count
+
+        # calculate pairwise switch error
+        a, b = cal_pse(in_block.left, in_block.truthleft)
+        pse += a
+        pse_event += b
         
         # calculate generalized hamming distance
         current_ghd, current_present = cal_GHD(in_block.weight, compare_list)
@@ -143,7 +174,9 @@ def blockwise_evaluate(chrom_block: list, idx: int, verbose: bool) -> dict:
             "total_snv": total_snv,
             "total_indel": total_indel,
             "total_sv": total_sv,
-            "total_block": total_block}
+            "total_block": total_block,
+            "pairwise_switch_error": pse,
+            "pairwise_event": pse_event}
 
 
 

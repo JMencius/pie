@@ -1,12 +1,15 @@
+from collections import deque
+from typing import Deque
+
 class myblock:
     def __init__(self, chrom, idx):
         self.chrom: str = chrom
         self.idx: str = idx
-        self.left: list = []
-        self.right: list = []
-        self.truthleft: list = []
-        self.truthright: list = []
-        self.weight: list = []
+        self.left:  Deque[str] = deque()
+        self.right: Deque[str] = deque()
+        self.truthleft: Deque[str] = deque()
+        self.truthright: Deque[str] = deque()
+        self.weight: Deque[int] = deque()
         self.length: int = 0
         self.count: int = 0
         self.snv: int = 0
