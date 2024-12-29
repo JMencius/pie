@@ -3,14 +3,14 @@ import os
 import sys
 
 
-def cal_total_ref(ref: str, chrom: list) -> dict:
+def get_ref_len(ref: str, chrom: list) -> dict:
     suffix = os.path.splitext(ref)[1]
     if suffix == ".fa" or suffix == ".fasta":
-        total_length = fasta_mode(ref, chrom)
-        return total_length
+        length_dict = fasta_mode(ref, chrom)
+        return length_dict
     elif suffix == ".fai":
-        total_length = fai_mode(ref, chrom)
-        return total_length
+        length_dict = fai_mode(ref, chrom)
+        return length_dict
     else:
         raise ValueError("Invalid file suffix of reference file")
 
@@ -27,7 +27,7 @@ def clean(in_name: str) -> str:
         return in_name
 
 
-def fasta_mode(ref: str, chrom: list) -> int:
+def fasta_mode(ref: str, chrom: list) -> dict:
     chr_len = dict()
     exist = set()
     for name, seq in pyfastx.Fasta(ref, build_index = False):
@@ -41,7 +41,7 @@ def fasta_mode(ref: str, chrom: list) -> int:
     else:
         for i in chrom:
             if i not in exist:
-                print(f"CRITICAL WARNING chr{i} not in reference file")
+                print(f"CRITICAL ERROR chr{i} not in reference file")
         print("Some chrosome missing in reference file, NG50 and NG90 will not be calculated")
         return -1
 
@@ -63,7 +63,7 @@ def fai_mode(ref_fai: str, chrom: list) -> dict:
     else:
         for i in chrom:
             if i not in exist:
-                print(f"CRITICAL WARNING chr{i} not in reference file")
+                print(f"CRITICAL ERROR chr{i} not in reference file")
         print("Some chrosome missing in reference file, NG50 and NG90 will not be calculated")
         return -1
                 

@@ -15,15 +15,14 @@ Options:
   -n, --name TEXT        User defined sample name of the input vcf file,
                          [default: `extract from vcf`]
   -c, --compare TEXT     Truth vcf/bcf file for comparsion  [required]
-  -r, --ref TEXT         Reference file [default:GCA_000001405.15_GRCh38_no_al
-                         t_analysis_set.fasta]
-  -o, --output TEXT      Output tsv file name  [required]
+  -r, --ref TEXT         Reference file fasta or fasta.fai  [required]
+  -o, --output TEXT      Output tsv file prefix, path can be added before the
+                         prefix, such as -o /test/output_name  [required]
   -t, --threads INTEGER  Maximum numbers of parallel threads
-  --fbed TEXT            Bed file to filter out, such as centromere region in
-                         data/hg38_centromere.bed
+  --bed TEXT             Regions to only include, defined in bed file
   --min-sv INTEGER       Minimal length of Structral Variant
-  --chrom TEXT           Chromosome to evaluate,use comma to connect e.g.
-                         --chrom 1,2,3 [default:1-22, X, Y]
+  --chrom TEXT           Chromosome to evaluate,use comma to join e.g. --chrom
+                         1,2,3 [default:1-23, X, Y]
   --mincount INTEGER     Minimum numbers of phased sites in a phase block
                          [default: 2]
   --no-sex               Ignore sex chromosome
@@ -32,9 +31,7 @@ Options:
   --no-sv                Ignore Structural Variant
   --no-indel             Ignore insertion and deletion
   --no-double            Ignore double heterozygous site
-  --no-centro            Ignore centromere region
   --verbose              Verbose mode print intermediate results to stdout
-  --test                 Run test sample
   --version              Show the version and exit.
   --help                 Show this message and exit.
 ```

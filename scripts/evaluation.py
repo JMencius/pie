@@ -1,5 +1,5 @@
+from scripts.overall_metrics import cal_NGx0
 import ctypes
-import statistics
 import os
 import sys
 from scripts.myblock import myblock
@@ -109,7 +109,7 @@ def cal_GHD(weight_list: list, hamming_list: list) -> tuple:
 
 
 
-def blockwise_evaluate(chrom_block: list, idx: int, verbose: bool) -> dict:
+def blockwise_evaluate(chrom_block: list, idx: int, ref_len_dict: dict, verbose: bool) -> dict:
     # return tuple is (median, Switch Error, Generalized Hamming Distance)
     result_list = list()
     len_list = list()
@@ -121,8 +121,6 @@ def blockwise_evaluate(chrom_block: list, idx: int, verbose: bool) -> dict:
     pse, pse_event = 0, 0
     present_chrom = None
     for in_block in chrom_block:
-        #print(in_block)
-        #print(in_block.weight)
         present_chrom = in_block.chrom
         total_block += 1
         total_snv += in_block.snv
@@ -152,20 +150,20 @@ def blockwise_evaluate(chrom_block: list, idx: int, verbose: bool) -> dict:
         pse += a
         pse_event += b
         
-        # calculate generalized hamming distance
+        # calculate hamming distance
         current_ghd, current_present = cal_GHD(in_block.weight, compare_list)
         total_present += current_ghd
         total_ghd += current_present
         
 
     if len(len_list) > 0:
-        length_median = statistics.median(len_list)
+        NG50 = cal_NGx0(len_list, ref_len_dict[present_chrom], 50)
     else:
         length_median = None
         print(f"CRITIAL WARNING: No phase block in chromosome {present_chrom}, please check the vcfs")
 
     return {"total_phase": total_phase,
-            "length_median": length_median,
+            "NG50": NG50,
             "total_se": total_se,
             "total_event": total_event,
             "total_present": total_present,

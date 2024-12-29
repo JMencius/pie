@@ -65,9 +65,9 @@ def intersect(query: dict, truth: dict, chrom: str, mincount: int, min_sv: int) 
                         block_dict[block_index].end = max(r.pos, block_dict[block_index].end)
                     
                     # add according to category
+                    block_dict[block_index].weight.append(1)
                     if r.category == "SNV":
                         block_dict[block_index].snv += 1
-                        block_dict[block_index].weight.append(1)
                     else:
                         if r.category == "INDEL":
                             block_dict[block_index].indel += 1
@@ -75,13 +75,6 @@ def intersect(query: dict, truth: dict, chrom: str, mincount: int, min_sv: int) 
                             if r.category == "SV":
                                 block_dict[block_index].sv += 1
 
-                        alt_list = list(r.alt)
-                        if len(r.alt) == 1:
-                            weight = Levenshtein.distance(r.ref, str(alt_list[0]))
-                        else:
-                            weight = abs(Levenshtein.distance(str(alt_list[0]), str(alt_list[1])))
-                        
-                        block_dict[block_index].weight.append(weight)
     
         cleaned = clean_blocks(block_dict, mincount)
         for i in cleaned:
