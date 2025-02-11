@@ -4,20 +4,26 @@ import os
 import time
 import logging
 from multiprocessing import Pool
+from module.sort_chrom import sort_chrom
+from module.cal_ref import get_ref_len
+from module.read_bed import read_bed
+from module.read_vcf import read_vcf
+from module.write_genotype import write_genotype
+from module.evaluation import blockwise_evaluate
+
+
 from scripts.parse_vcf import get_sample_name
 from scripts.intersect import intersect
 from scripts.evaluation import blockwise_evaluate
-from scripts.cal_ref import get_ref_len
 from scripts.overall_metrics import cal_NGx0
 from scripts.cal_truth_metrics import cal_truth_pairs
 from scripts.F1_related import cal_F1_related
-from multiprocessing import Pool
-from scripts.sort_key import sort_key
-from IO.read_bed import read_bed
-from IO.read_vcf import read_vcf
 from IO.write_results import write_results
 from IO.write_stats import write_stats
+from IO.block_start_end import block_start_end
 from process.prefilter import prefilter
+from process.extract_target import extract_target
+
 
 
 PWD = os.path.dirname(os.path.realpath(__file__))
@@ -30,25 +36,30 @@ PWD = os.path.dirname(os.path.realpath(__file__))
 @click.option("-o", "--output", required = True, help = "Output tsv file prefix, path can be added before the prefix, such as -o /test/output_name")
 @click.option("-t", "--threads", default = 24, help = "Maximum numbers of parallel threads")
 @click.option("--bed", default = None, help = r"Regions to only include, defined in bed file")
+@click.option("--block", default = None, help = r"Output phasing block start and end to bed file, such as --block blocks.bed")
 @click.option("--min-sv", default = 30, help = "Minimal length of Structral Variant")
-@click.option("--chrom", default = ','.join([str(i) for i in range(1, 23)] + ['X', 'Y']), help = "Chromosome to evaluate,use comma to join e.g. --chrom 1,2,3 [default:1-23, X, Y]")
+@click.option("--chrom", default = ','.join(["chr" + str(i) for i in range(1, 23)]), help = "Chromosome to evaluate,use comma to join chromosome name e.g. --chrom chr1,chr2,chr3 [default:chr1-chr22,]")
+@click.option("--sexchrom", default = ["chrX, chrY"], help = "Sex chromosme,use comma to join chromosome name e.g. --sexchrom chrX,chrY [default:chrX,chrY,]")
 @click.option("--mincount", default = 2, help = "Minimum numbers of phased sites in a phase block [default: 2]")
-@click.option("--no-sex", is_flag = True, default = True, help = "Ignore sex chromosome")
+@click.option("--no-sex", is_flag = True, help = "Ignore sex chromosome")
 @click.option("--canonical", is_flag = True, help = "Canonical mode, only evaluate single mutation SNV")
 @click.option("--only-snv", is_flag = True, help = "Only evaluate Single Nucleotide Variation")
 @click.option("--no-sv", is_flag = True, help = "Ignore Structural Variant")
 @click.option("--no-indel", is_flag = True, help = "Ignore insertion and deletion")
 @click.option("--no-double", is_flag = True, help = "Ignore double heterozygous site")
 @click.option("--verbose", is_flag = True, help = "Verbose mode print intermediate results to stdout")
-@click.version_option(version="es-0.4.0", prog_name = r"phasing all-in-one evaluator(pie), based on Python 3.7+")
-def main(input, name, compare, ref, output, threads, bed, min_sv, chrom, mincount, canonical, no_sex, only_snv, no_sv, no_indel, no_double, verbose):
-    if verbose:
-        start_time = time.time()
+@click.version_option(version="es-0.5.0", prog_name = r"phasing all-in-one evaluator(pie), based on Python 3.7+")
+def main(input, name, compare, ref, output, threads, bed, block, min_sv, chrom, sexchrom, mincount, canonical, no_sex, only_snv, no_sv, no_indel, no_double, verbose):
+    start_time = time.time()
     
     logging.basicConfig(level = logging.DEBUG, format = "%(asctime)s - %(levelname)s - %(message)s")
+    if verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+    else:
+        logging.getLogger().setLevel(logging.WARNING)
 
     # get aboslute path
-    logging.info(f"Processing parameters")
+    logging.info(f"Processing input parameters")
     input = os.path.abspath(input)
     compare = os.path.abspath(compare)
     ref = os.path.abspath(ref)
@@ -63,11 +74,14 @@ def main(input, name, compare, ref, output, threads, bed, min_sv, chrom, mincoun
     # process chromosome area
     chrom = [i.upper() for i in chrom.split(',')]
     if no_sex:
-        if 'X' in chrom:
-            chrom.remove('X')
-        if 'Y' in chrom:
-            chrom.remove('Y')
-    chrom.sort(key = sort_key)
+        clean_chrom = []
+        for i in chrom:
+            if i not in sexchrom:
+                clean_chrom.append(i)
+        chrom = clean_chrom[:]
+    
+    # sort chromosome
+    chrom = sort_chrom(chrom)
 
     # print parameters in verbose mode
     if verbose:
@@ -90,43 +104,37 @@ def main(input, name, compare, ref, output, threads, bed, min_sv, chrom, mincoun
 
 
     # get target area
-    if bed:
-        target = read_bed(bed)
+    if not bed:
+        target = None
+    else:
+        logging.info("Benchmarking of specified bed area")
+        target = read_bed(bed, chrom)
+        target_len = len(target)
+        if target_len <= 0:
+            logging.error("No region specified in the BED file. Please ensure the BED file follows the standard tab-separated format")
+            sys.exit(1)
+        else:
+            logging.info(f"{target_len} region(s) specified in bed file")
     
-    
-    # read and filter two vcf files
+    # read VCF files
     logging.info("Reading query VCF file")
     with Pool(threads) as p:
-        query_vcf = p.starmap(read_vcf, [(input, c) for c in chrom])
+        query_vcf = p.starmap(read_vcf, [(input, c, target, min_sv) for c in chrom])
 
     logging.info("Reading truth VCF file")
     with Pool(threads) as p:
-        truth_vcf = p.starmap(read_vcf, [(compare, c) for c in chrom])
-    ##print(list(truth_vcf[0].items())[:10])
-
-    
-    logging.info("Evaluate genotype and extract phased")
-    with Pool(threads) as q:
-        prefiltered = q.starmap(prefilter, [(query_vcf[t], truth_vcf[t], chrom[t], min_sv, only_snv, no_sv, no_indel, no_double) for t in range(len(chrom))])
-    logging.info("Finish evaluate genotype and extract phased")
+        truth_vcf = p.starmap(read_vcf, [(compare, c, target, min_sv) for c in chrom])
 
 
-    logging.info("Writing variant stat file")
-    write_stats([i[2] for i in prefiltered], output ,chrom)
+    logging.info("Evalating genotype and intersecting blocks")
+    with Pool(threads) as p:
+        intersect_result = p.starmap(intersect, [(query_vcf[i], truth_vcf[i], chrom[i]) for i in range(len(chrom))])
+    blocks = [i[0] for i in intersect_result]
+    genotype_result = [i[1] for i in intersect_result]
 
+    loging.info("Writing genotype result")
+    write_genotype(genotype_result, output, chrom)   
 
-    # calculate truth metrics
-    logging.info("Calculating truth metrics")
-
-    with Pool(threads) as t:
-        pairs_results = t.map(cal_truth_pairs, [prefiltered[i][1] for i in range(len(chrom))])
-
-
-    logging.info("Intersecting two vcf files")
-    with Pool(threads) as q:
-        intersect_results = q.starmap(intersect, [(prefiltered[t][0], prefiltered[t][1], chrom[t], mincount, min_sv) for t in range(len(chrom))])
-        #intersect_results = q.starmap(intersect, [(query_vcf[t_chr], truth_vcf[t_chr], t_chr, mincount, min_sv) for t_chr in chrom])
-    
     logging.info("Evluating blocks")
     with Pool(threads) as r:
         evaluation_results = r.starmap(blockwise_evaluate, [(intersect_results[i], i, len_dict, verbose) for i in range(len(intersect_results))])
@@ -139,18 +147,18 @@ def main(input, name, compare, ref, output, threads, bed, min_sv, chrom, mincoun
     NG50 = cal_NGx0(phase_len, total_ref_len, 50)
     NG90 = cal_NGx0(phase_len, total_ref_len, 90)
     
-    # calculate F1-score
-    evaluation_results = cal_F1_related(pairs_results, evaluation_results)
     
     # Output to files
+    logging.info("Writing output file")
     if (not name):
         name = get_sample_name(input)
     write_results(evaluation_results, chrom, (NG50, NG90), output, name, verbose)
-    logging.info("ALL DONE")
+    
 
-    if verbose:
-        end_time = time.time()
-        logging.info(f"Total processing time is {end_time - start_time} seconds.")
+    logging.info("ALL DONE")   
+    end_time = time.time()
+    logging.info(f"Total processing time is {end_time - start_time} seconds.")
+
 
 
 

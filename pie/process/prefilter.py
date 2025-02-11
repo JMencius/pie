@@ -61,6 +61,8 @@ def prefilter(query: dict, truth: dict, working_chr: str, min_sv: int, only_snv:
     TP_phased = 0
     query_blocks = dict()
     truth_blocks = dict()
+    
+    q, t = 0, 0
 
     for site in truth:
         if site not in query:
@@ -82,30 +84,39 @@ def prefilter(query: dict, truth: dict, working_chr: str, min_sv: int, only_snv:
                         TP += 1
 
 
-                        if query_subject[4]:
-                            TP_phased += 1
+                        #if query_subject[4]:
+                        if True:
+                            if query_subject[4]:
+                                TP_phased += 1
+                                query_isphased = True
+                            else:
+                                query_isphased = False
                             isdouble, category = get_category(query_subject, min_sv)
                             flag = get_flag(isdouble, category, only_snv, no_sv, no_indel, no_double)
                             if flag:
-                                query_record = myrecord(working_chr, site, query_subject[0], set(query_alt), query_subject[5], query_subject[2], query_subject[3], category)
+                                query_record = myrecord(working_chr, site, query_subject[0], set(query_alt), query_subject[5], query_subject[2], query_subject[3], category, query_isphased)
                             
                                 if query_subject[5] not in query_blocks:
                                     query_blocks[query_subject[5]] = list()
-
                                 query_blocks[query_subject[5]].append(query_record)
-                        
-                        if truth_subject[4]:
+
+                        #if truth_subject[4]:
+                        if True:
+                            if truth_subject[4]:
+                                truth_isphased = True
+                            else:
+                                truth_isphased = False
                             isdouble, category = get_category(truth_subject, min_sv)
                             flag = get_flag(isdouble, category, only_snv, no_sv, no_indel, no_double)
                             if flag:
-                                truth_record = myrecord(working_chr, site, truth_subject[0], set(truth_alt), truth_subject[5], truth_subject[2], truth_subject[3], category)
+                                truth_record = myrecord(working_chr, site, truth_subject[0], set(truth_alt), truth_subject[5], truth_subject[2], truth_subject[3], category, truth_isphased)
                                 if truth_subject[5] not in truth_blocks:
                                     truth_blocks[truth_subject[5]] = list()
-
+                                    
                                 truth_blocks[truth_subject[5]].append(truth_record)
-    
-    stat = {"TP": TP, "FP": FP, "FN": FN, "TP_phased": TP_phased}
 
+    stat = {"TP": TP, "FP": FP, "FN": FN, "TP_phased": TP_phased}
+    
     return (query_blocks, truth_blocks, stat)
 
 
