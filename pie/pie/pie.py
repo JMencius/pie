@@ -4,33 +4,23 @@ import os
 import time
 import logging
 from multiprocessing import Pool
-from module.sort_chrom import sort_chrom
-from module.cal_ref import get_ref_len
-from module.read_bed import read_bed
-from module.read_vcf import read_vcf
-from module.write_genotype import write_genotype
-from module.evaluation import blockwise_evaluate
-
-
-from scripts.parse_vcf import get_sample_name
-from scripts.intersect import intersect
-from scripts.evaluation import blockwise_evaluate
-from scripts.overall_metrics import cal_NGx0
-from scripts.cal_truth_metrics import cal_truth_pairs
-from scripts.F1_related import cal_F1_related
-from IO.write_results import write_results
-from IO.write_stats import write_stats
-from IO.block_start_end import block_start_end
-from process.prefilter import prefilter
-from process.extract_target import extract_target
-
+from pie.module.sort_chrom import sort_chrom
+from pie.module.cal_ref import get_ref_len
+from pie.module.read_bed import read_bed
+from pie.module.read_vcf import read_vcf
+from pie.module.intersect import intersect
+from pie.module.write_genotype import write_genotype
+from pie.module.evaluation import blockwise_evaluate
+from pie.module.overall_metrics import cal_NGx0
+from pie.module.write_block import write_block
+from pie.module.write_evaluation import write_evaluation
 
 
 PWD = os.path.dirname(os.path.realpath(__file__))
 
 @click.command()
 @click.option("-i", "--input", required = True, help = "Input vcf/bcf file for evaluation")
-@click.option("-n", "--name", default = None, help = "User defined sample name of the input vcf file, [default: `extract from vcf`]")
+@click.option("-n", "--name", default = "Sample", help = "User defined sample name of the input vcf file, [default: Sample]")
 @click.option("-c", "--compare", required = True, help = "Truth vcf/bcf file for comparsion")
 @click.option("-r", "--ref", required = True, help = "Reference file fasta or fasta.fai")
 @click.option("-o", "--output", required = True, help = "Output tsv file prefix, path can be added before the prefix, such as -o /test/output_name")
@@ -72,7 +62,7 @@ def main(input, name, compare, ref, output, threads, bed, block, min_sv, chrom, 
         no_double = True
     
     # process chromosome area
-    chrom = [i.upper() for i in chrom.split(',')]
+    chrom = [i for i in chrom.split(',')]
     if no_sex:
         clean_chrom = []
         for i in chrom:
@@ -105,11 +95,10 @@ def main(input, name, compare, ref, output, threads, bed, block, min_sv, chrom, 
 
     # get target area
     if not bed:
-        target = None
+        bed_target = None
     else:
         logging.info("Benchmarking of specified bed area")
-        target = read_bed(bed, chrom)
-        target_len = len(target)
+        target_len, bed_target = read_bed(bed, chrom)
         if target_len <= 0:
             logging.error("No region specified in the BED file. Please ensure the BED file follows the standard tab-separated format")
             sys.exit(1)
@@ -119,46 +108,74 @@ def main(input, name, compare, ref, output, threads, bed, block, min_sv, chrom, 
     # read VCF files
     logging.info("Reading query VCF file")
     with Pool(threads) as p:
-        query_vcf = p.starmap(read_vcf, [(input, c, target, min_sv) for c in chrom])
+        query_vcf = p.starmap(read_vcf, [(input, c, bed_target, min_sv) for c in chrom])
 
     logging.info("Reading truth VCF file")
     with Pool(threads) as p:
-        truth_vcf = p.starmap(read_vcf, [(compare, c, target, min_sv) for c in chrom])
+        truth_vcf = p.starmap(read_vcf, [(compare, c, bed_target, min_sv) for c in chrom])
 
+    logging.info("Evaluating genotype and intersecting blocks")
+    # operate in normal mode
+    filters = {"only_snv": only_snv, "no_sv": no_sv, "no_indel": no_indel, "no_double": no_double}
+    if not bed_target:
+        target_bed_list = None
+        with Pool(threads) as p:
+            intersect_result = p.starmap(intersect, [(query_vcf[i], truth_vcf[i], chrom[i], filters) for i in range(len(chrom))])
+    else:
+        # flatten dict of list into dict
+        query_pool = dict()
+        truth_pool = dict()
+        for i in query_vcf:
+            for j in i:
+                query_pool[j] = i[j]
+        for i in truth_vcf:
+            for j in i:
+                truth_pool[j] = i[j]
+        # operate in bed mode
+        target_bed_list = list(query_pool.keys())
+        with Pool(threads) as p:
+            intersect_result = p.starmap(intersect, [(query_pool[i], truth_pool[i], i[0], filters) for i in target_bed_list])
 
-    logging.info("Evalating genotype and intersecting blocks")
-    with Pool(threads) as p:
-        intersect_result = p.starmap(intersect, [(query_vcf[i], truth_vcf[i], chrom[i]) for i in range(len(chrom))])
     blocks = [i[0] for i in intersect_result]
     genotype_result = [i[1] for i in intersect_result]
+    ##print(len(genotype_result))
+    #sys.exit(0)
+    ##print(target_bed_list)
 
-    loging.info("Writing genotype result")
-    write_genotype(genotype_result, output, chrom)   
-
+    logging.info("Writing genotype result")
+    write_genotype(genotype_result, output, chrom, target_bed_list) 
+    
     logging.info("Evluating blocks")
     with Pool(threads) as r:
-        evaluation_results = r.starmap(blockwise_evaluate, [(intersect_results[i], i, len_dict, verbose) for i in range(len(intersect_results))])
+        evaluation_results = r.starmap(blockwise_evaluate, [(blocks[i], len_dict, mincount, target_bed_list) for i in range(len(blocks))])
     
-    logging.info("Calculating NG50 and NG90")
-    phase_len = list()
-    for eva in evaluation_results:
-        phase_len += eva["length_list"]
-    phase_len.sort(reverse = True)
-    NG50 = cal_NGx0(phase_len, total_ref_len, 50)
-    NG90 = cal_NGx0(phase_len, total_ref_len, 90)
-    
-    
+    if not target_bed_list:
+        logging.info("Calculating overall NG50 and NG90")
+        phase_len = list()
+        for eva in evaluation_results:
+            phase_len += eva["length_list"]
+        phase_len.sort(reverse = True)
+        NG50 = cal_NGx0(phase_len, total_ref_len, 50)
+        NG90 = cal_NGx0(phase_len, total_ref_len, 90)
+    else:
+        NG50, NG90 = None, None
+
+    ##print(evaluation_results[0], NG50, NG90)
+
     # Output to files
     logging.info("Writing output file")
-    if (not name):
-        name = get_sample_name(input)
-    write_results(evaluation_results, chrom, (NG50, NG90), output, name, verbose)
+    if block:
+        ### need to filter
+        logging.info("Writing block bed file")
+        write_block(blocks, output, chrom)
+    
+    logging.info("Writing evaluation output file")
+    write_evaluation(output, evaluation_results, chrom, name, NG50, NG90, target_bed_list)
     
 
     logging.info("ALL DONE")   
     end_time = time.time()
     logging.info(f"Total processing time is {end_time - start_time} seconds.")
-
 
 
 

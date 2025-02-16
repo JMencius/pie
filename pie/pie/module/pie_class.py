@@ -3,7 +3,7 @@ from collections import deque
 from typing import Deque
 
 
-class variant:
+class pievariant:
     def __init__(self, chrom, pos, ref, alt, ps, left, right, type, isphased, isdouble):
         self.chrom : str = chrom
         self.pos : int = pos
@@ -40,13 +40,10 @@ class block:
         self.truthleft: str = ""
         self.truthright: str = ""
 
-    def add_phased_variant(self, query_variant, truth_variant, action: int):
+    def add_phased_variant(self, query_variant, truth_variant):
         if truth_variant.pos == query_variant.pos:
             self.phase_variants.append(query_variant.pos)
-            if action == 1:
-                self.subject[query_variant.pos] = (query_variant.left, truth_variant.left, truth_variant.right)
-            elif action == -1:
-                self.subject[query_variant.pos] = (query_variant.right, truth_variant.left, truth_variant.right)
+            self.subject[query_variant.pos] = (query_variant.left, truth_variant.left, truth_variant.right)
 
             if query_variant.type == "SNV":
                 self.snv += 1
@@ -60,11 +57,11 @@ class block:
         self.FN += 1
 
     def finalize(self):
-        self.start = phase_variants[0]
-        self.end = phase_variants[-1]
-        self.queryleft = ''.join([i[0] for i in self.subject.values()])
-        self.truthleft = ''.join([i[1] for i in self.subject.values()])
-        self.truthright = ''.join([i[2] for i in self.subject.values()])
+        self.start = min(self.phase_variants)
+        self.end = max(self.phase_variants)
+        self.queryleft = ''.join([str(i[0]) for i in self.subject.values()])
+        self.truthleft = ''.join([str(i[1]) for i in self.subject.values()])
+        self.truthright = ''.join([str(i[2]) for i in self.subject.values()])
 
            
         

@@ -1,7 +1,6 @@
 import logging
 from cyvcf2 import VCF
-from pie_class import variant
-
+from pie.module.pie_class import pievariant
 
 def get_type(ref: str, alt: list, min_sv: int) -> tuple:
     if len(alt) > 1:
@@ -21,19 +20,29 @@ def get_type(ref: str, alt: list, min_sv: int) -> tuple:
 
 
 
-def read_vcf(filename: str, working_chr: str, bed_target: str, min_sv: int) -> dict:
+def read_vcf(filename: str, working_chr: str, bed_target: dict, min_sv: int) -> dict:
     chr_variants = dict()
 
     for variant in VCF(filename, threads = 1):
         if variant.CHROM == working_chr:
-            isphased = varaint.gt_phases[0]
-            ps_tag = str(variant.format('PS')[0])
+            isphased = variant.gt_phases[0]
+            if variant.format('PS'):
+                ps_tag = str(variant.format('PS')[0])
+            else:
+                ps_tag = "Unknown"
             left, right, _ = variant.genotypes[0]
             if left != right:
                 isdouble, variant_type = get_type(variant.REF, variant.ALT, min_sv)
-                current_variant = variant(variant.CHROM, variant.POS, variant.REF, variant.ALT, ps_tag, left, right, variant_type, isphased, isdouble)
-            
-                chr_variants[variant.POS] = current_variant
+                
+                if left != '.' and right != '.':
+                    current_variant = pievariant(variant.CHROM, variant.POS, variant.REF, variant.ALT, ps_tag, left, right, variant_type, isphased, isdouble)
+                
+                flag = True
+                if variant.POS in chr_variants:
+                    if chr_variants[variant.POS].isphased:
+                        flag = False
+                if flag:
+                    chr_variants[variant.POS] = current_variant
     
     if not bed_target:
         return chr_variants
@@ -45,7 +54,7 @@ def read_vcf(filename: str, working_chr: str, bed_target: str, min_sv: int) -> d
             for site in range(i[0], i[1] + 1):
                 if site in chr_variants:
                     this_region[site] = chr_variants[site]
-            region_variants_dict[i] = this_region
+            region_variants_dict[(working_chr, i[0], i[1])] = this_region
 
         # free memory
         del chr_variants

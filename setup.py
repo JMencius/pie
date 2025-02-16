@@ -1,31 +1,31 @@
 from setuptools import setup, find_namespace_packages
 setup(
     name = "pie",
-    package_dir={"": "src"},
-    packages=find_namespace_packages(where="src"),
+    package_dir={"": "pie"},
+    packages=find_namespace_packages(where="pie"),
     package_data={
-        "longbow.model": ["*.csv"],
-        "longbow.module": ["*.py"],
+        "pie.module": ["*.py"],
+        "pie.module.lib": ["hamming.so"],
     },
-    version = "2.3.0",
-    description = "A Python program for nanopore sequencing basecalling configuration prediction",
+    version = "0.5.0",
+    description = "Phasing all-in-one evaluator",
     author = "Jun Mencius",
     author_email = "zjmeng22@m.fudan.edu.cn",
     url = "https://github.com/JMencius/pie",
-    keywords = ["longbow", "ont", "configuration"],
+    keywords = ["pie", "haplotype", "phasing", "benchmark"],
     python_requires = ">=3.7",
     install_requires = [
-        "numpy",
-        "pyfastx>=2.0.2",
-        "statsmodels>=0.13.5",
-        "psutil"
+        "click>=8.1.8",
+        "cyvcf2>=0.31.1",
+        "sortedcontainers>=2.4.0",
+        "pyfastx>=2.2.0"
         ],
     extras_require = {
         "dev": ["pytest"],
         },
     entry_points={
     "console_scripts": [
-        "longbow = pie.pie:main",
+        "pie = pie.pie:main",
         ],
     },
 )

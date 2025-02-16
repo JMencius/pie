@@ -1,5 +1,6 @@
-from module.pie_class import block
-from module.overall_metrics import cal_NGx0
+from pie.module.pie_class import block
+from pie.module.overall_metrics import cal_NGx0
+from pie.module.F1_related import cal_all
 import ctypes
 import os
 import sys
@@ -11,7 +12,7 @@ import logging
 # load C so
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
-lib = ctypes.CDLL(f"{script_dir}/hamming.so")
+lib = ctypes.CDLL(f"{script_dir}/lib/hamming.so")
 
 # hamming distance C function
 lib.hamming_distance.restype = ctypes.c_int
@@ -46,7 +47,7 @@ def cal_se(hamming_list: list) -> tuple:
     """
     calculate traditional switch error(SE)
     """
-    event_count = len(hamming_list)
+    event_count = len(hamming_list) - 1
     # 'S' means Start
     flag = 'S'
     se_count = 0
@@ -78,8 +79,12 @@ def cal_pse(query: str, truth: str) -> tuple:
     event = 0
     while len(q) > 1:
         #print(q, t)
-        q1 = q[1:]
-        t1 = t[1:]
+        q1 = q[0]
+        t1 = t[0]
+        
+        q = q[1:]
+        t = t[1:]
+
         dist = c_hamming_distance(q, t)
         #print(dist)
         if q1 != t1:
@@ -92,8 +97,7 @@ def cal_pse(query: str, truth: str) -> tuple:
 
 
 
-def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict) -> dict:
-    result_list = list()
+def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, target_bed_list: list) -> dict:
     len_list = list()
     total_snv, total_indel, total_sv, total_phase = 0, 0, 0, 0
     total_block = 0
@@ -101,7 +105,12 @@ def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict) -> dict:
     HD_denom, HD = 0, 0
     PSE_denom, PSE = 0, 0
     present_chrom = None
+    pairwise_FN = 0
     for b in chrom_block.values():
+        # filter out very small block
+        if (b.snv + b.indel + b.sv) < mincount:
+            continue
+
         # b for block
         total_block += 1
         present_chrom = b.chrom
@@ -113,49 +122,69 @@ def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict) -> dict:
         
         # calculate hamming distance
         hd = c_hamming_distance(b.queryleft, b.truthleft)
-
+        
+        aac = 'left'
         if hd > 0.5 * len(b.queryleft):
             hd = c_hamming_distance(b.queryleft, b.truthright)
             compare_list = hamming_comparison(b.queryleft, b.truthright)
             compare_subject = b.truthright
+            aac = 'right'
         else:
             compare_list = hamming_comparison(b.queryleft, b.truthleft)
             compare_subject = b.truthleft
 
         HD_denom += len(b.queryleft)
         HD += hd
-
+        
         # calculate switch error rate
         se_count, se_event_count = cal_se(compare_list)
         SE += se_count
         SE_denom += se_event_count
-
+        
         # calculate pairwise switch error
         pse_count, pse_event_count = cal_pse(b.queryleft, compare_subject)
         PSE += pse_count
         PSE_denom += pse_event_count
         
+        # calculate pairwise recall
+        unphase_count = b.FN
+        if unphase_count != 0:
+            pairwise_FN += (b.snv + b.indel + b.sv) * unphase_count + ((unphase_count - 1) * unphase_count / 2)
+    
+
+    pairwise_FP = PSE
+    pairwise_TP = PSE_denom - PSE
         
+    pairwise_precision, pairwise_recall, pairwise_f1 = cal_all(pairwise_TP, pairwise_FP, pairwise_FN)
 
-    if len(len_list) > 0:
-        NG50 = cal_NGx0(len_list, ref_len_dict[present_chrom], 50)
-    else:
-        length_median = None
-        logging.warning(f"CRITIAL WARNING: No phase block in chromosome {present_chrom}")
-
-    return {"total_phase": total_phase,
-            "NG50": NG50,
+    results={"total_phase": total_phase,
             "SE": SE,
             "SE_denom": SE_denom,
             "HD": HD,
             "HD_denom": HD_denom,
             "length_list": len_list,
-            "total_snv": total_snv,
-            "total_indel": total_indel,
-            "total_sv": total_sv,
-            "total_block": total_block,
+            "snv": total_snv,
+            "indel": total_indel,
+            "sv": total_sv,
+            "block_count": total_block,
             "PSE": PSE,
-            "PSE_denom": PSE_denom}
+            "PSE_denom": PSE_denom,
+            "pairwise_TP": pairwise_TP,
+            "pairwise_FP": pairwise_FP,
+            "pairwise_FN": pairwise_FN,
+            "pairwise_precision": pairwise_precision,
+            "pairwise_recall": pairwise_recall,
+            "pairwise_f1": pairwise_f1}
+    
+    if not target_bed_list:
+        if len(len_list) > 0:
+            NG50 = cal_NGx0(len_list, ref_len_dict[present_chrom], 50)
+            results["NG50"] = NG50
+        else:
+            logging.warning(f"No phase block in chromosome {present_chrom}")
+    
+
+    return results
 
 
 
@@ -165,5 +194,7 @@ if __name__ == "__main__":
     distance = c_hamming_distance(str1, str2)
     print(f"Hamming distance: {distance}")
 
+    distance_list = hamming_comparison(str1, str2)
+    print(cal_se(distance_list))
 
 

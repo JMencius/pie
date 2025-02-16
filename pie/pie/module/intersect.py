@@ -1,28 +1,44 @@
-from pie_class import variant
-from pie_class import block
+from pie.module.pie_class import pievariant
+from pie.module.pie_class import block
 
 
 def check_genotype(query_variant, truth_variant) -> int:
     """
     return 0: not the same genotype
     return 1: exact the same genotype
-    retrun -1: the same genotype but have to flip GT
     """
     q = list(query_variant.ref) + query_variant.alt
     t = list(truth_variant.ref) + truth_variant.alt
     q_left, q_right = q[query_variant.left], q[query_variant.right]
     t_left, t_right = t[truth_variant.left], t[truth_variant.right]
 
-    if (q_left, q_right) == (t_left, t_right):
+    if {q_left, q_right} == {t_left, t_right}:
         return 1
-    elif (q_left, q_right) == (t_right, t_left):
-        return -1
     else:
         return 0
 
-    
 
-def intersect(query: dict, truth: dict, chrom: str) -> dict:
+def check_filters(filters: dict, pievariant) -> bool:
+    if filters["only_snv"]:
+        if pievariant.type != "SNV":
+            return False
+    
+    if filters["no_sv"]:
+        if pievariant.type == "SV":
+            return False
+
+    if filters["no_indel"]:
+        if pievariant.type == "INDEL":
+            return False
+
+    if filters["no_double"]:
+        if pievariant.isdouble:
+            return False
+
+    return True
+
+
+def intersect(query: dict, truth: dict, chrom: str, filters: dict) -> dict:
     phaseblock = dict()
     genotype_TP, genotype_FP, genotype_FN = 0, 0, 0
     phase_count, unphase_count, interblock_unphase = 0, 0, 0
@@ -35,19 +51,21 @@ def intersect(query: dict, truth: dict, chrom: str) -> dict:
             query_variant = query[i]
             truth_variant = truth[i]
             check_result = check_genotype(query_variant, truth_variant)
+
             if check_result == 0:
                 genotype_FP += 1
             else:
                 genotype_TP += 1
-                if truth_variant.isphased:
-                    if not query_variant.isphased:
-                        unphase_count += 1
-                        unphase_variant.add(i)
-                    else:
-                        phase_count += 1
-                        if query_variant.ps not in phaseblock:
-                            phaseblock[(truth_variant.ps, query_variant.ps)] = block(query_variant.chrom, (truth_variant.ps, query_variant.ps))
-                        phaseblock[(truth_variant.ps, query_variant.ps)].add_phased_variant(query_variant, truth_variant, check_result)
+                if truth_variant.isphased and truth_variant.ref == query_variant.ref:
+                    if check_filters(filters, query_variant) and check_filters(filters, truth_variant):
+                        if not query_variant.isphased:
+                            unphase_count += 1
+                            unphase_variant.add(i)
+                        else:
+                            phase_count += 1
+                            if (truth_variant.ps, query_variant.ps) not in phaseblock:
+                                phaseblock[(truth_variant.ps, query_variant.ps)] = block(query_variant.chrom, (truth_variant.ps, query_variant.ps))
+                            phaseblock[(truth_variant.ps, query_variant.ps)].add_phased_variant(query_variant, truth_variant)
     
     # finalize blocks
     for b in phaseblock.values():
@@ -66,9 +84,10 @@ def intersect(query: dict, truth: dict, chrom: str) -> dict:
             for b in phaseblock.values():
                 if (b.start, b.end) == in_block:
                     b.add_unphased_variant(site)
-    genotype_result = {TP: genotype_TP, FP: genotype_FP, FN: genotype_FN, PC: phase_count, UC: unphase_count, IUC: interblock_unphase}
+    genotype_result = {"TP": genotype_TP, "FP": genotype_FP, "FN": genotype_FN, "PC": phase_count, "UC": unphase_count, "IUC": interblock_unphase}
 
     return (phaseblock, genotype_result)
+
 
 
 def find_closest_block(site: int, intervals: list):
