@@ -96,6 +96,37 @@ def cal_pse(query: str, truth: str) -> tuple:
 
 
 
+def cal_pairwise_FN(blocks: dict, mincount: int) -> int:
+    break_cause = 0
+
+    start = True
+    last_block_variants = 0
+    total_variants = 0
+    total_genotypeFN = 0
+    for b in blocks.values():
+        vc = b.snv + b.indel + b.sv
+        # filter out very small block
+        if vc < mincount:
+            continue
+
+        total_variants += vc
+        total_genotypeFN += b.FN
+        if start:
+            last_block_variants = vc
+            start = False
+        else:
+            break_cause += (vc * total_variants) * FN_correct_coefficient(vc, total_variants)
+
+    genotypeFN_cause = total_variants * total_genotypeFN + (total_genotypeFN - 1) * total_genotypeFN / 2
+
+    return genotypeFN_cause + break_cause
+
+
+def FN_correct_coefficient(n1: int, n2: int) -> float:
+    correct_coefficient = 4 / (n1 + n2 - 2) * (1 + (min(n1, n2) - (n1 + n2) // 2) / sum([n1, n2]))
+    return correct_coefficient
+
+
 
 def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, target_bed_list: list) -> dict:
     len_list = list()
@@ -123,12 +154,10 @@ def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, tar
         # calculate hamming distance
         hd = c_hamming_distance(b.queryleft, b.truthleft)
         
-        aac = 'left'
         if hd > 0.5 * len(b.queryleft):
             hd = c_hamming_distance(b.queryleft, b.truthright)
             compare_list = hamming_comparison(b.queryleft, b.truthright)
             compare_subject = b.truthright
-            aac = 'right'
         else:
             compare_list = hamming_comparison(b.queryleft, b.truthleft)
             compare_subject = b.truthleft
@@ -154,7 +183,8 @@ def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, tar
 
     pairwise_FP = PSE
     pairwise_TP = PSE_denom - PSE
-        
+    pairwise_FN = cal_pairwise_FN(chrom_block, mincount)
+
     pairwise_precision, pairwise_recall, pairwise_f1 = cal_all(pairwise_TP, pairwise_FP, pairwise_FN)
 
     results={"total_phase": total_phase,

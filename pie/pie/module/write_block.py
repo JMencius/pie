@@ -1,7 +1,7 @@
 import os
 
 
-def write_block(blocks: list, output: str, chrom: list) -> None:
+def write_block(blocks: list, output: str, chrom: list, mincount: int) -> None:
     with open(os.path.abspath(output + ".blocks.bed"), 'w') as f:
         # write header
         f.write('\t'.join(["Chromosome", "Start", "End"]))
@@ -12,7 +12,8 @@ def write_block(blocks: list, output: str, chrom: list) -> None:
             c = chrom[i]
             blocks = []
             for j in blocks[i].values():
-                blocks.append((j.start, j.end))
+                if (j.snv + j.indel + j.sv) > mincount:
+                    blocks.append((j.start, j.end))
 
             blocks.sort(key = lambda K : K[0])
 

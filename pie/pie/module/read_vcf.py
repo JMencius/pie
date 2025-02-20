@@ -1,6 +1,7 @@
 import logging
 from cyvcf2 import VCF
 from pie.module.pie_class import pievariant
+import sys
 
 def get_type(ref: str, alt: list, min_sv: int) -> tuple:
     if len(alt) > 1:
@@ -26,16 +27,18 @@ def read_vcf(filename: str, working_chr: str, bed_target: dict, min_sv: int) -> 
     for variant in VCF(filename, threads = 1):
         if variant.CHROM == working_chr:
             isphased = variant.gt_phases[0]
-            if variant.format('PS'):
-                ps_tag = str(variant.format('PS')[0])
+            if "PS" in variant.FORMAT:
+                if variant.format("PS"):
+                    ps_tag = str(variant.format("PS")[0])
+                else:
+                    ps_tag = "UNK"
             else:
-                ps_tag = "Unknown"
+                ps_tag = "UNK"
             left, right, _ = variant.genotypes[0]
-            if left != right:
+            if (left != right) and ('.' not in variant.gt_bases[0]):
                 isdouble, variant_type = get_type(variant.REF, variant.ALT, min_sv)
                 
-                if left != '.' and right != '.':
-                    current_variant = pievariant(variant.CHROM, variant.POS, variant.REF, variant.ALT, ps_tag, left, right, variant_type, isphased, isdouble)
+                current_variant = pievariant(variant.CHROM, variant.POS, variant.REF, variant.ALT, ps_tag, left, right, variant_type, isphased, isdouble)
                 
                 flag = True
                 if variant.POS in chr_variants:

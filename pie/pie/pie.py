@@ -38,7 +38,7 @@ PWD = os.path.dirname(os.path.realpath(__file__))
 @click.option("--no-indel", is_flag = True, help = "Ignore insertion and deletion")
 @click.option("--no-double", is_flag = True, help = "Ignore double heterozygous site")
 @click.option("--verbose", is_flag = True, help = "Verbose mode print intermediate results to stdout")
-@click.version_option(version="es-0.5.0", prog_name = r"phasing all-in-one evaluator(pie), based on Python 3.7+")
+@click.version_option(version="es-0.5.1", prog_name = r"phasing all-in-one evaluator(pie), based on Python 3.7+")
 def main(input, name, compare, ref, output, threads, bed, block, min_sv, chrom, sexchrom, mincount, canonical, no_sex, only_snv, no_sv, no_indel, no_double, verbose):
     start_time = time.time()
     
@@ -114,6 +114,12 @@ def main(input, name, compare, ref, output, threads, bed, block, min_sv, chrom, 
     with Pool(threads) as p:
         truth_vcf = p.starmap(read_vcf, [(compare, c, bed_target, min_sv) for c in chrom])
 
+    for i in truth_vcf[0]:
+        s = truth_vcf[0][i]
+        if len(str(s.left)) != len(str(s.right)):
+            print(s)
+    #sys.exit(0)
+
     logging.info("Evaluating genotype and intersecting blocks")
     # operate in normal mode
     filters = {"only_snv": only_snv, "no_sv": no_sv, "no_indel": no_indel, "no_double": no_double}
@@ -141,6 +147,7 @@ def main(input, name, compare, ref, output, threads, bed, block, min_sv, chrom, 
     ##print(len(genotype_result))
     #sys.exit(0)
     ##print(target_bed_list)
+    
 
     logging.info("Writing genotype result")
     write_genotype(genotype_result, output, chrom, target_bed_list) 
@@ -167,7 +174,7 @@ def main(input, name, compare, ref, output, threads, bed, block, min_sv, chrom, 
     if block:
         ### need to filter
         logging.info("Writing block bed file")
-        write_block(blocks, output, chrom)
+        write_block(blocks, output, chrom, mincount)
     
     logging.info("Writing evaluation output file")
     write_evaluation(output, evaluation_results, chrom, name, NG50, NG90, target_bed_list)
