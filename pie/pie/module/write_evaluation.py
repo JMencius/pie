@@ -54,13 +54,13 @@ def write_evaluation(output: str, evaluation_results: list, chrom: list, name: s
 
         with open(os.path.abspath(output + ".overall.csv"), 'w') as f:
             # write header
-            overall_header = ["Sample", "Total phased", "SNV", "INDEL", "SV", "Block count", "NG50", "NG90" "Total Switch error", "Switch error rate", "Hamming distance", "Hamming distance percentage", "Pairwise event", "Pairwise switch error rate", "Pairwise precision", "Pairwise recall", "Pairwise F1"]
+            overall_header = ["Sample", "Total phased", "SNV", "INDEL", "SV", "Block count", "NG50", "NG90", "Total Switch error", "Switch error rate", "Hamming distance", "Hamming distance percentage", "Pairwise event", "Pairwise switch error rate", "Pairwise precision", "Pairwise recall", "Pairwise F1"]
             f.write(','.join(overall_header))
             f.write('\n')
 
             # calculate and write metrics
             overall_precision, overall_recall, overall_f1 = cal_all(total_pairwise_TP, total_pairwise_FP, total_pairwise_FN)
-            overall_result = [name, total_phase, total_snv, total_indel, total_sv, total_block, NG50, NG90, total_se, safediv(total_se, total_se_denom), total_hd, safediv(total_hd, total_hd_denom), total_pse_denom, overall_precision, overall_recall, overall_f1]
+            overall_result = [name, total_phase, total_snv, total_indel, total_sv, total_block, NG50, NG90, total_se, safediv(total_se, total_se_denom), total_hd, safediv(total_hd, total_hd_denom), total_pse_denom, safediv(total_pse, total_pse_denom), overall_precision, overall_recall, overall_f1]
             f.write(','.join([str(t) for t in overall_result]))
             f.write('\n')
     

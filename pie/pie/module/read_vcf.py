@@ -50,17 +50,18 @@ def read_vcf(filename: str, working_chr: str, bed_target: dict, min_sv: int) -> 
     if not bed_target:
         return chr_variants
     else:
-        regions = bed_target[working_chr]
         region_variants_dict = dict()
-        for i in regions:
-            this_region = dict()
-            for site in range(i[0], i[1] + 1):
-                if site in chr_variants:
-                    this_region[site] = chr_variants[site]
-            region_variants_dict[(working_chr, i[0], i[1])] = this_region
+        if working_chr in bed_target:
+            regions = bed_target[working_chr]
+            for i in regions:
+                this_region = dict()
+                for site in range(i[0], i[1] + 1):
+                    if site in chr_variants:
+                        this_region[site] = chr_variants[site]
+                region_variants_dict[(working_chr, i[0], i[1])] = this_region
 
-        # free memory
-        del chr_variants
+            # free memory
+            del chr_variants
 
         return region_variants_dict
 

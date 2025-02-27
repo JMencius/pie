@@ -56,8 +56,10 @@ def cal_se(hamming_list: list) -> tuple:
             if flag == 0:
                 se_count += 1
                 flag = 1
+
             if flag == 'S':
                 flag = 1
+
 
         if i == 0:
             if flag == 1:
@@ -65,70 +67,64 @@ def cal_se(hamming_list: list) -> tuple:
                 flag = 0
             if flag == 'S':
                 flag = 0
-
+    
     return (se_count, event_count)
 
 
 
-def cal_pse(query: str, truth: str) -> tuple:
+def cal_pse(query: str, truth: str, phase_variants, max_len: int) -> tuple:
     """
     calculate pairwise swtich error(pse)
     """
     q, t = query, truth
     pse = 0
     event = 0
-    while len(q) > 1:
-        #print(q, t)
-        q1 = q[0]
-        t1 = t[0]
-        
-        q = q[1:]
-        t = t[1:]
+    cut_point = 1
+    current_pos = 0
+    while current_pos < len(q) - 1:
+        while (cut_point < len(q) - 1) and ((phase_variants[cut_point] - phase_variants[current_pos]) <= max_len):
+            cut_point += 1
 
-        dist = c_hamming_distance(q, t)
+        q1 = q[current_pos]
+        t1 = t[current_pos]
+        
+        subject_q = q[current_pos + 1 : cut_point + 1]
+        subject_t = t[current_pos + 1 : cut_point + 1]
+
+        dist = c_hamming_distance(subject_q, subject_t)
         #print(dist)
         if q1 != t1:
-            dist = len(q) - dist
-        event += len(q)
+            dist = len(subject_q) - dist
+        event += len(subject_q)
         pse += dist
+        
+        current_pos += 1
 
     return (pse, event)
 
 
 
-def cal_pairwise_FN(blocks: dict, mincount: int) -> int:
-    break_cause = 0
-
-    start = True
-    last_block_variants = 0
-    total_variants = 0
-    total_genotypeFN = 0
-    for b in blocks.values():
-        vc = b.snv + b.indel + b.sv
-        # filter out very small block
-        if vc < mincount:
-            continue
-
-        total_variants += vc
-        total_genotypeFN += b.FN
-        if start:
-            last_block_variants = vc
-            start = False
-        else:
-            break_cause += (vc * total_variants) * FN_correct_coefficient(vc, total_variants)
-
-    genotypeFN_cause = total_variants * total_genotypeFN + (total_genotypeFN - 1) * total_genotypeFN / 2
-
-    return genotypeFN_cause + break_cause
-
-
-def FN_correct_coefficient(n1: int, n2: int) -> float:
-    correct_coefficient = 4 / (n1 + n2 - 2) * (1 + (min(n1, n2) - (n1 + n2) // 2) / sum([n1, n2]))
-    return correct_coefficient
+def Cn2(n: int) -> int:
+    return n * (n - 1) / 2
 
 
 
-def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, target_bed_list: list) -> dict:
+def process_truth_count(truth_count: dict, max_len: int) -> int:
+    total_pairs = 0
+    for pos_list in truth_count.values():
+        if len(pos_list) >= 2:
+            pos_list.sort()
+            j = 1
+            for i in range(len(pos_list) - 1):
+                while (j < len(pos_list) - 1) and ((pos_list[j] - pos_list[i]) <= max_len):
+                    j += 1
+                total_pairs += (j - i)
+
+
+    return total_pairs
+
+
+def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, truth_count: dict, max_len: int, target_bed_list: list) -> dict:
     len_list = list()
     total_snv, total_indel, total_sv, total_phase = 0, 0, 0, 0
     total_block = 0
@@ -137,6 +133,10 @@ def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, tar
     PSE_denom, PSE = 0, 0
     present_chrom = None
     pairwise_FN = 0
+
+    # calculate total pairs
+    total_pairs = process_truth_count(truth_count, max_len)
+
     for b in chrom_block.values():
         # filter out very small block
         if (b.snv + b.indel + b.sv) < mincount:
@@ -171,19 +171,15 @@ def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, tar
         SE_denom += se_event_count
         
         # calculate pairwise switch error
-        pse_count, pse_event_count = cal_pse(b.queryleft, compare_subject)
+        pse_count, pse_event_count = cal_pse(b.queryleft, compare_subject, b.phase_variants, max_len)
         PSE += pse_count
         PSE_denom += pse_event_count
         
-        # calculate pairwise recall
-        unphase_count = b.FN
-        if unphase_count != 0:
-            pairwise_FN += (b.snv + b.indel + b.sv) * unphase_count + ((unphase_count - 1) * unphase_count / 2)
-    
 
     pairwise_FP = PSE
     pairwise_TP = PSE_denom - PSE
-    pairwise_FN = cal_pairwise_FN(chrom_block, mincount)
+    pairwise_FN = total_pairs - PSE_denom
+
 
     pairwise_precision, pairwise_recall, pairwise_f1 = cal_all(pairwise_TP, pairwise_FP, pairwise_FN)
 
@@ -204,8 +200,10 @@ def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, tar
             "pairwise_FN": pairwise_FN,
             "pairwise_precision": pairwise_precision,
             "pairwise_recall": pairwise_recall,
-            "pairwise_f1": pairwise_f1}
+            "pairwise_f1": pairwise_f1,
+            }
     
+
     if not target_bed_list:
         if len(len_list) > 0:
             NG50 = cal_NGx0(len_list, ref_len_dict[present_chrom], 50)
