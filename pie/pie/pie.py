@@ -43,7 +43,7 @@ PWD = os.path.dirname(os.path.realpath(__file__))
 @click.option("--no-sv", is_flag = True, help = "Ignore structural variant")
 @click.option("--no-double", is_flag = True, help = "Ignore double heterozygous site")
 @click.option("--verbose", is_flag = True, help = "Verbose mode print intermediate results to stdout")
-@click.version_option(version="es-0.6.0-e", prog_name = r"phasing all-in-one evaluator(pie), based on Python 3.7+")
+@click.version_option(version="es-0.6.1", prog_name = r"phasing all-in-one evaluator(pie), based on Python 3.7+")
 def main(input, name, compare, ref, output, threads, max_len, bed, block, min_sv, chrom, sexchrom, mincount, canonical, no_sex, only_snv, only_indel, only_sv, no_snv, no_indel, no_sv, no_double, verbose):
     start_time = time.time()
     
@@ -178,7 +178,7 @@ def main(input, name, compare, ref, output, threads, max_len, bed, block, min_sv
     if block:
         ### need to filter
         logging.info("Writing block bed file")
-        write_block(blocks, output, chrom, mincount)
+        write_block(blocks, output, mincount)
     
     logging.info("Writing evaluation output file")
     write_evaluation(output, evaluation_results, chrom, name, NG50, NG90, target_bed_list)

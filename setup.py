@@ -7,7 +7,7 @@ setup(
         "pie.module": ["*.py"],
         "pie.module.lib": ["hamming.so"],
     },
-    version = "0.5.0",
+    version = "0.6.1",
     description = "Phasing all-in-one evaluator",
     author = "Jun Mencius",
     author_email = "zjmeng22@m.fudan.edu.cn",

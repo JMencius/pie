@@ -1,19 +1,23 @@
 import os
 
 
-def write_block(blocks: list, output: str, chrom: list, mincount: int) -> None:
+def write_block(blocks: list, output: str, mincount: int) -> None:
     with open(os.path.abspath(output + ".blocks.bed"), 'w') as f:
         # write each block
-        for i in range(len(chrom)):
-            c = chrom[i]
-            blocks_start_end = []
-            for j in blocks[i].values():
+        blocks_start_end = dict()
+        for i in blocks:
+            for j in i.values():
                 if (j.snv + j.indel + j.sv) >= mincount:
-                    blocks_start_end.append((j.start, j.end))
+                    if j.chrom not in blocks_start_end:
+                        blocks_start_end[j.chrom] = list()
+                    blocks_start_end[j.chrom].append((j.start, j.end))
+        
+        for b in blocks_start_end.values():
+            b.sort(key = lambda K : K[0])
 
-            blocks_start_end.sort(key = lambda K : K[0])
 
-            for b in blocks_start_end:
+        for c in blocks_start_end:
+            for b in blocks_start_end[c]:
                 f.write('\t'.join([c, str(b[0]), str(b[1])]))
                 f.write('\n')
 
