@@ -54,11 +54,13 @@ def check_filters(filters: dict, pievariant) -> bool:
 def intersect(query: dict, truth: dict, chrom: str, filters: dict) -> dict:
     phaseblock = dict()
     genotype_TP, genotype_FP, genotype_FN = 0, 0, 0
-    phase_count, unphase_count, interblock_unphase = 0, 0, 0
+    total_phase_count, total_unphase_count, interblock_unphase = 0, 0, 0
     unphase_variant = set()
-    
-    # intersect blocks
-    # and calculate truth pairs
+
+    # [phase_count, unphase_count]
+    phase_data = {"SNV": [0, 0], "INDEL": [0, 0], "SV": [0, 0]}
+
+    # intersect blocks and calculate truth pairs
     truth_blocks = dict()
 
     for i in truth:
@@ -72,18 +74,20 @@ def intersect(query: dict, truth: dict, chrom: str, filters: dict) -> dict:
             if check_result == 0:
                 genotype_FP += 1
             else:
-                genotype_TP += 1
                 if truth_variant.isphased and truth_variant.ref == query_variant.ref:
                     if check_filters(filters, query_variant) and check_filters(filters, truth_variant):
+                        genotype_TP += 1
                         if truth_variant.ps not in truth_blocks:
                             truth_blocks[truth_variant.ps] = list()
                         truth_blocks[truth_variant.ps].append(truth_variant.pos)
                         
                         if not query_variant.isphased:
-                            unphase_count += 1
+                            total_unphase_count += 1
                             unphase_variant.add(i)
+                            phase_data[query_variant.type][1] += 1
                         else:
-                            phase_count += 1
+                            total_phase_count += 1
+                            phase_data[query_variant.type][0] += 1
                             if (truth_variant.ps, query_variant.ps) not in phaseblock:
                                 phaseblock[(truth_variant.ps, query_variant.ps)] = block(query_variant.chrom, (truth_variant.ps, query_variant.ps))
                             phaseblock[(truth_variant.ps, query_variant.ps)].add_phased_variant(query_variant, truth_variant)
@@ -107,9 +111,9 @@ def intersect(query: dict, truth: dict, chrom: str, filters: dict) -> dict:
             for b in phaseblock.values():
                 if (b.start, b.end) == in_block:
                     b.add_unphased_variant(site)
-    genotype_result = {"TP": genotype_TP, "FP": genotype_FP, "FN": genotype_FN, "PC": phase_count, "UC": unphase_count, "IUC": interblock_unphase}
+    genotype_result = {"TP": genotype_TP, "FP": genotype_FP, "FN": genotype_FN, "PC": total_phase_count, "UC": total_unphase_count, "IUC": interblock_unphase}
 
-    return (phaseblock, genotype_result, truth_blocks)
+    return (phaseblock, genotype_result, truth_blocks, phase_data)
 
 
 

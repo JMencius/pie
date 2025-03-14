@@ -43,7 +43,7 @@ PWD = os.path.dirname(os.path.realpath(__file__))
 @click.option("--no-sv", is_flag = True, help = "Ignore structural variant")
 @click.option("--no-double", is_flag = True, help = "Ignore double heterozygous site")
 @click.option("--verbose", is_flag = True, help = "Verbose mode print intermediate results to stdout")
-@click.version_option(version="es-0.6.1", prog_name = r"phasing all-in-one evaluator(pie), based on Python 3.7+")
+@click.version_option(version="es-0.6.2", prog_name = r"phasing all-in-one evaluator(pie), based on Python 3.7+")
 def main(input, name, compare, ref, output, threads, max_len, bed, block, min_sv, chrom, sexchrom, mincount, canonical, no_sex, only_snv, only_indel, only_sv, no_snv, no_indel, no_sv, no_double, verbose):
     start_time = time.time()
     
@@ -150,10 +150,10 @@ def main(input, name, compare, ref, output, threads, max_len, bed, block, min_sv
     blocks = [i[0] for i in intersect_result]
     genotype_result = [i[1] for i in intersect_result]
     truth_count = [i[2] for i in intersect_result]
-    
+    phase_count = [i[3] for i in intersect_result]   
 
     logging.info("Writing genotype result")
-    write_genotype(genotype_result, output, chrom, target_bed_list) 
+    write_genotype(genotype_result, phase_count, output, chrom, target_bed_list) 
     
     long_sum, short_sum = 0, 0
     logging.info("Evluating blocks")
