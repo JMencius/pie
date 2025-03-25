@@ -1,4 +1,4 @@
-<img src="pie_logo.png" width = "100" height = "100">
+<img src="pie_logo.png" width = "71" height = "153">
 
 # pie
 Phasing all-In-one Evaluator, for haplotype phasing evaluation
