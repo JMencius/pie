@@ -21,7 +21,7 @@ pip install .;
 | `-i or --input` | file for evaluation | .vcf / .vcf.gz |
 | `-c or --compare` | ground truth file | .vcf / .vcf.gz |
 | `-r or --ref` | reference file | .fa / .fasta / .fai |
-| `-o or --output` | Output file prefix | ./test/output_name |
+| `-o or --output` | Output file prefix | exmaple: ./test/output_name |
 
 ### Recommend flag
 Use `--verbose` to monitor the running process and enable detailed logging.
@@ -97,10 +97,16 @@ pie --verbose -i phase.vcf -c truth.vcf -r ref.fa --chrom chr6 --only-snv --bloc
 ```
 
 ## Output file
+| Output suffix | Description | Condition |
+|:---:|:---:|:--:|
+| `..variant.stats.csv` | Genotype evaluation result and phased percentage | Always generated |
+| `.perchrom.csv` | Per chromosome phasing evaluation result | Always generated |
+| `.overall.csv` | Overall sample evaluation result | Always generated |
+| `.blocks.bed` | Raw phasing block start end in `-i` or `--input` file | with `--block` set |
 
-
-## Performance
-
+## Resouce consumption
+`Pie` is expected to completed evaluation within minutes.
+The actual performance may vary depending on factors such as size of `vcf`, I/O speed, memory speed, and CPU capabilities.
 
 
 
