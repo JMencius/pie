@@ -1,4 +1,6 @@
-<img src="pie_logo.png" width = "100">  # pie
+<img src="pie_logo.png" width = "100">  
+
+# pie
 Phasing all-In-one Evaluator, for haplotype phasing evaluation
 
 ## Installation
