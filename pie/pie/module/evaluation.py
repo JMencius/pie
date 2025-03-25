@@ -1,5 +1,4 @@
 from pie.module.pie_class import block
-from pie.module.overall_metrics import cal_NGx0
 from pie.module.F1_related import cal_all
 import ctypes
 import os
@@ -124,14 +123,13 @@ def process_truth_count(truth_count: dict, max_len: int) -> int:
     return total_pairs
 
 
-def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, truth_count: dict, max_len: int, target_bed_list: list) -> dict:
+def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, truth_count: dict, max_len: int, target_bed_list: list, present_chrom: str) -> dict:
     len_list = list()
     total_snv, total_indel, total_sv, total_phase = 0, 0, 0, 0
     total_block = 0
     SE_denom, SE = 0, 0
     HD_denom, HD = 0, 0
     PSE_denom, PSE = 0, 0
-    present_chrom = None
     pairwise_FN = 0
 
     # calculate total pairs
@@ -204,25 +202,7 @@ def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, tru
             }
     
 
-    if not target_bed_list:
-        if len(len_list) > 0:
-            NG50 = cal_NGx0(len_list, ref_len_dict[present_chrom], 50)
-            results["NG50"] = NG50
-        else:
-            logging.warning(f"No phase block in chromosome {present_chrom}")
-    
-
     return results
 
-
-
-if __name__ == "__main__":
-    str1 = "1@001"
-    str2 = "10011"
-    distance = c_hamming_distance(str1, str2)
-    print(f"Hamming distance: {distance}")
-
-    distance_list = hamming_comparison(str1, str2)
-    print(cal_se(distance_list))
 
 

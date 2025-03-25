@@ -2,7 +2,7 @@ import logging
 
 
 def check_filters(filters: dict) -> bool:
-    #filters = {"only_snv": only_snv, "only_indel": only_indel, "only_sv": only_sv, "no_snv": no_snv, "no_indel": no_indel, "no_sv": no_sv, "no_double": no_double}
+    #filters = {"only_snv": only_snv, "only_indel": only_indel, "only_sv": only_sv, "no_snv": no_snv, "no_indel": no_indel, "no_sv": no_sv}
     only_count = ([filters["only_snv"], filters["only_indel"], filters["only_sv"]]).count(True)
     if only_count > 1:
         logging.error("Only one of --only_snv, --only_indel, or --only_sv can be set at a time.")
@@ -19,5 +19,5 @@ def check_filters(filters: dict) -> bool:
     if filters["only_sv"] and filters["no_sv"]:
         logging.error("Can not set --only_sv and --no_sv simultaneously")
         return False
-    
+   
     return True

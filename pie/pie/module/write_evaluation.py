@@ -5,7 +5,7 @@ from pie.module.safediv import safediv
 
 
 
-def write_evaluation(output: str, evaluation_results: list, chrom: list, name: str, NG50: int, NG90: int, bed: list) -> None:
+def write_evaluation(output: str, evaluation_results: list, chrom: list, name: str, NG50: dict, bed: list) -> None:
     # write result in normal mode
     if not bed:
         with open(os.path.abspath(output + ".perchrom.csv"), 'w') as f:
@@ -23,7 +23,7 @@ def write_evaluation(output: str, evaluation_results: list, chrom: list, name: s
             # write each chromosome and summarize
             for i in range(len(chrom)):
                 s = evaluation_results[i]
-                result = [chrom[i], s["total_phase"], s["snv"], s["indel"], s["sv"], s["block_count"], s["NG50"], s["SE"], safediv(s["SE"], s["SE_denom"]), s["HD"], safediv(s["HD"], s["HD_denom"]), s["PSE_denom"], safediv(s["PSE"], s["PSE_denom"]), s["pairwise_precision"], s["pairwise_recall"], s["pairwise_f1"]]
+                result = [chrom[i], s["total_phase"], s["snv"], s["indel"], s["sv"], s["block_count"], NG50[chrom[i]], s["SE"], safediv(s["SE"], s["SE_denom"]), s["HD"], safediv(s["HD"], s["HD_denom"]), s["PSE_denom"], safediv(s["PSE"], s["PSE_denom"]), s["pairwise_precision"], s["pairwise_recall"], s["pairwise_f1"]]
                 f.write(','.join([str(t) for t in result]))
                 f.write('\n')
 
@@ -48,13 +48,13 @@ def write_evaluation(output: str, evaluation_results: list, chrom: list, name: s
 
         with open(os.path.abspath(output + ".overall.csv"), 'w') as f:
             # write header
-            overall_header = ["Sample", "Total phased", "SNV", "INDEL", "SV", "Block count", "NG50", "NG90", "Total Switch error", "Switch error rate", "Hamming distance", "Hamming distance percentage", "Pairwise event", "Pairwise switch error rate", "Pairwise precision", "Pairwise recall", "Pairwise F1"]
+            overall_header = ["Sample", "Total phased", "SNV", "INDEL", "SV", "Block count", "NG50", "Total Switch error", "Switch error rate", "Hamming distance", "Hamming distance percentage", "Pairwise event", "Pairwise switch error rate", "Pairwise precision", "Pairwise recall", "Pairwise F1"]
             f.write(','.join(overall_header))
             f.write('\n')
 
             # calculate and write metrics
             overall_precision, overall_recall, overall_f1 = cal_all(total_pairwise_TP, total_pairwise_FP, total_pairwise_FN)
-            overall_result = [name, total_phase, total_snv, total_indel, total_sv, total_block, NG50, NG90, total_se, safediv(total_se, total_se_denom), total_hd, safediv(total_hd, total_hd_denom), total_pse_denom, safediv(total_pse, total_pse_denom), overall_precision, overall_recall, overall_f1]
+            overall_result = [name, total_phase, total_snv, total_indel, total_sv, total_block, NG50["ALL"], total_se, safediv(total_se, total_se_denom), total_hd, safediv(total_hd, total_hd_denom), total_pse_denom, safediv(total_pse, total_pse_denom), overall_precision, overall_recall, overall_f1]
             f.write(','.join([str(t) for t in overall_result]))
             f.write('\n')
     
@@ -106,7 +106,7 @@ def write_evaluation(output: str, evaluation_results: list, chrom: list, name: s
 
             # calculate and write metrics
             overall_precision, overall_recall, overall_f1 = cal_all(total_pairwise_TP, total_pairwise_FP, total_pairwise_FN)
-            overall_result = [name, total_phase, total_snv, total_indel, total_sv, total_block, total_se, safediv(total_se, total_se_denom), total_hd, safediv(total_hd, total_hd_denom), total_pse_denom, overall_precision, overall_recall, overall_f1]
+            overall_result = [name, total_phase, total_snv, total_indel, total_sv, total_block, total_se, safediv(total_se, total_se_denom), total_hd, safediv(total_hd, total_hd_denom), total_pse_denom, safediv(toal_pse, total_pse_denom), overall_precision, overall_recall, overall_f1]
             f.write(','.join([str(t) for t in overall_result]))
             f.write('\n')
 
