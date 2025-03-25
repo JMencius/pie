@@ -8,7 +8,7 @@ conda create -n pie python=3.7;
 conda activate pie;
 ```
 
-2. Navigate to the base directory, which contains `setup.py`
+2. Navigate to the base directory, which contains `setup.py`. Use `pip` to install `pie`.
 ```
 pip install .;
 ```
