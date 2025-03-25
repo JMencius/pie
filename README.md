@@ -91,7 +91,7 @@ pie --verbose -i phase.vcf -c truth.vcf -r ref.fa --no-sv -o ./output/no_sv
 pie --verbose -i phase.vcf -c truth.vcf -r ref.fa --block -o ./output/more
 ```
 
-6. (miscellaneous) Evaluate only SNVs on chromosome 6 and output raw block start and end positions to a BED file.
+6. (Miscellaneous) Evaluate only SNVs on chromosome 6 and output raw block start and end positions to a BED file.
 ```
 pie --verbose -i phase.vcf -c truth.vcf -r ref.fa --chrom chr6 --only-snv --block -o ./output/misc
 ```
