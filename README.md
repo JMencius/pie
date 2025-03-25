@@ -99,10 +99,11 @@ pie --verbose -i phase.vcf -c truth.vcf -r ref.fa --chrom chr6 --only-snv --bloc
 ## Output file
 | Output suffix | Description | Condition |
 |:---:|:---:|:--:|
-| `..variant.stats.csv` | Genotype evaluation result and phased percentage | Always generated |
+| `.variant.stats.csv` | Genotype evaluation result and phased percentage | Always generated |
 | `.perchrom.csv` | Per chromosome phasing evaluation result | Always generated |
 | `.overall.csv` | Overall sample evaluation result | Always generated |
 | `.blocks.bed` | Raw phasing block start end in `-i` or `--input` file | with `--block` set |
+
 
 ## Resouce consumption
 `Pie` is expected to completed evaluation within minutes.
