@@ -1,3 +1,5 @@
+<img src="pie_logo.png" align="left">
+
 # pie
 Phasing all-In-one Evaluator, for haplotype phasing evaluation
 
