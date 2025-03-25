@@ -16,7 +16,7 @@ pip install .;
 
 ## Usage
 ### Required argument
-| Parameters | Explaination | Format or example |
+| Parameters | Description | Format or example |
 |:---:|:---:|:---:| 
 | `-i or --input` | file for evaluation | .vcf / .vcf.gz |
 | `-c or --compare` | ground truth file | .vcf / .vcf.gz |
@@ -42,7 +42,7 @@ Pairwise length argument:
   -m, --max-len INTEGER  Maximum variant distance for pairwise calculation [default: 250000]
 
 Specific site or chromosome, SV definiton:
-  --bed TEXT             .bed file specifying genomic regions to include.
+  -b, --bed TEXT         .bed file specifying genomic regions to include.
   --min-sv INTEGER       Minimal length threshold of Structral Variant [default: 30], > 30 bp is SV
   --chrom TEXT           Chromosome to evaluate,use comma to join chromosome name e.g. --chrom chr1,chr2,chr3 [default:chr1,chr2,chr3,...,chr22]
   --sexchrom TEXT        Sex chromosme,use comma to join chromosome name e.g. --sexchrom chrX,chrY [default: chrX,chrY]
@@ -64,8 +64,8 @@ flag:
   -h, --help             Show this message and exit.
 ```
 
-## Exmaple
-`phase.vcf` is the sample VCF file to be evaluated against the ground truth VCF file (`truth.vcf`)
+## Exmaples
+Supoose `phase.vcf` is the sample VCF file to be evaluated against the ground truth VCF file (`truth.vcf`).
 1. (Comprehensive) Evaluate all autosome
 ```
 pie --verbose -i phase.vcf -c truth.vcf -r ref.fa -o ./output/comprehensive
