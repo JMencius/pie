@@ -7,7 +7,7 @@
 ##FILTER=<ID=GAP1,Description="Uncalled in the first haplotype">
 ##FILTER=<ID=GAP2,Description="Uncalled in the second haplotype">
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	syndip
-chr1	350745	.	G	C	30	.	.	GT:AD	0|1:0,1
+chr1	350745	.	G	C	30	.	.	GT:AD	1|0:0,1
 chr1	350777	.	A	G	30	.	.	GT:AD	0|1:0,1
 chr1	350796	.	C	A	30	.	.	GT:AD	0|1:0,1
 chr1	350805	.	A	AACTCACTGAAGGTGGAGGGAAAATGGTGTTGACCTAAGTC	30	.	.	GT:AD	0|1:0,1

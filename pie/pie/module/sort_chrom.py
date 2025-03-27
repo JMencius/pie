@@ -16,5 +16,3 @@ def sort_chrom(chrom: list) -> list:
 
     return sorted_chrom
 
-if __name__ == "__main__":
-    print(sort_chrom(["chr1", "chr2", "chrX", "ChrY"]))

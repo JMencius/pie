@@ -1,2 +1,0 @@
-Chromosome,Total phased,SNV,INDEL,SV,Block count,NG50,Total Switch error,Switch error rate,Hamming distance,Hamming distance percentage,Pairwise event,Pairwise switch error rate,Pairwise precision,Pairwise recall,Pairwise F1
-chr1,6,3,2,1,1,None,0,0.0,0,0.0,15,0.0,1.0,1.0,1.0

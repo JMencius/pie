@@ -3,13 +3,18 @@ from cyvcf2 import VCF
 from pie.module.pie_class import pievariant
 import sys
 
-def get_type(ref: str, alt: list, min_sv: int) -> tuple:
+
+def get_type(ref: str, alt: list, min_sv: int, left: int, right: int) -> tuple:
     if len(alt) > 1:
         double = True
     else:
         double = False
+    
+    variant_pool = list(ref) + alt
+    if not ((0 <= left < len(variant_pool)) and (0 <= right < len(variant_pool))): 
+        return None
 
-    max_len = max(len(ref), max([len(i) for i in alt]))
+    max_len = max(len(ref), len(variant_pool[left]), len(variant_pool[right]))
     if max_len == 1:
         vtype = "SNV"
     elif 1 < max_len <= min_sv:
@@ -36,7 +41,12 @@ def read_vcf(filename: str, working_chr: str, bed_target: dict, min_sv: int) -> 
                 ps_tag = "UNK"
             left, right, _ = variant.genotypes[0]
             if (left != right) and ('.' not in variant.gt_bases[0]):
-                isdouble, variant_type = get_type(variant.REF, variant.ALT, min_sv)
+                type_result = get_type(variant.REF, variant.ALT, min_sv, left, right)
+                if not type_result:
+                    logging.warning(f"GT tag exceed length in {working_chr} position {variant.POS}, which will be ignored")
+                    continue
+                
+                isdouble, variant_type = type_result
                 
                 current_variant = pievariant(variant.CHROM, variant.POS, variant.REF, variant.ALT, ps_tag, left, right, variant_type, isphased, isdouble)
                 

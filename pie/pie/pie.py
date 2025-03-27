@@ -21,7 +21,11 @@ from pie.module.write_evaluation import write_evaluation
 def main():
     start_time = time.time()
     
-    input, name, compare, ref, output, threads, max_len, bed, min_sv, chrom, sexchrom, mincount, canonical, block, no_sex, only_snv, only_indel, only_sv, no_snv, no_indel, no_sv, no_double, verbose = cli(standalone_mode = False)
+    param = cli(standalone_mode = False)     
+   
+    if isinstance(param, int):
+        sys.exit(0)
+    input, name, compare, ref, output, threads, max_len, bed, min_sv, chrom, sexchrom, mincount, canonical, block, no_sex, only_snv, only_indel, only_sv, no_snv, no_indel, no_sv, no_double, no_sort, verbose = param
 
     logging.basicConfig(level = logging.DEBUG, format = "%(asctime)s - %(levelname)s - %(message)s")
     if verbose:
@@ -39,7 +43,7 @@ def main():
         bed_target = None
     else:
         logging.info("Reading specified bed areas")
-        target_len, bed_target = read_bed(bed, chrom)
+        target_len, bed_target = read_bed(bed, chrom, no_sort)
 
     
     # read VCF files
@@ -87,7 +91,6 @@ def main():
     logging.info("Writing genotype result")
     write_genotype(genotype_result, phase_count, output, chrom, target_bed_list) 
     
-    long_sum, short_sum = 0, 0
     logging.info("Evluating phase blocks")
     with Pool(threads) as r:
         evaluation_results = r.starmap(blockwise_evaluate, [(blocks[i], len_dict, mincount, truth_count[i], max_len, target_bed_list, chrom[i]) for i in range(len(blocks))])

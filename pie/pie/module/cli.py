@@ -1,4 +1,5 @@
 import os
+import sys
 import click
 import math
 from pathlib import Path
@@ -28,9 +29,11 @@ import logging
 @click.option("--no-indel", is_flag = True, help = "Ignore insertion and deletion")
 @click.option("--no-sv", is_flag = True, help = "Ignore structural variant")
 @click.option("--no-double", is_flag = True, help = "Ignore double heterozygous site")
+@click.option("--no-sort", is_flag = True, help = "Do not sort chromosome, directly use the -c or --chrom input order")
 @click.option("--verbose", is_flag = True, help = "Enable verbose mode, printing parameters and progress to standard output")
 @click.version_option(version="0.7.0", prog_name = r"Phasing all-in-one evaluator (pie), based on Python 3.7+")
-def cli(input, name, compare, ref, output, threads, max_len, bed, min_sv, chrom, sexchrom, mincount, canonical, block, no_sex, only_snv, only_indel, only_sv, no_snv, no_indel, no_sv, no_double, verbose) -> tuple:
+def cli(input, name, compare, ref, output, threads, max_len, bed, min_sv, chrom, sexchrom, mincount, canonical, block, no_sex, only_snv, only_indel, only_sv, no_snv, no_indel, no_sv, no_double, no_sort, verbose) -> tuple:
+
     # set logging
     logging.basicConfig(level = logging.DEBUG, format = "%(asctime)s - %(levelname)s - %(message)s")
 
@@ -50,9 +53,9 @@ def cli(input, name, compare, ref, output, threads, max_len, bed, min_sv, chrom,
     # check parameters
     input_vcf = Path(input)
     compare_vcf = Path(compare)
-    if not (input_vcf.suffix == ".vcf" or input_vcf.suffixes == [".vcf", ".gz"]):
+    if not (input_vcf.suffix == ".vcf" or input_vcf.suffix == ".bcf" or input_vcf.suffixes == [".vcf", ".gz"]):
         raise ValueError(r"-i or --input must be .vcf or .vcf.gz file. You provided a file with a different extension")
-    if not (compare_vcf.suffix == ".vcf" or compare_vcf.suffixes == [".vcf", ".gz"]):
+    if not (compare_vcf.suffix == ".vcf" or compare_vcf.suffix == ".bcf" or compare_vcf.suffixes == [".vcf", ".gz"]):
         raise ValueError(r"-c or --compare must be .vcf or .vcf.gz file. You provided a file with a different extension")     
 
     ref_file = Path(ref)
@@ -69,15 +72,21 @@ def cli(input, name, compare, ref, output, threads, max_len, bed, min_sv, chrom,
         raise ValueError(f"The output directory {output_dir} does not exist")
     else:
         if not os.path.isdir(output_dir):
-            raise ValueError(f"The path {output_dir} exists but is not a directory")        
+            raise ValueError(f"The output directory {output_dir} exists but is not a directory")        
 
     if threads > os.cpu_count():
-        logging.warning(f"-t or --threads set threads exceed CPU thread count ({os.cpu_count()})")
+        logging.warning(f"-t or --threads set threads exceed the system CPU thread count ({os.cpu_count()})")
         
 
     # process chromosome area
-    chrom = chrom.split(',')
-    sexchrom = sexchrom.split(',')
+    chrom = [i.strip() for i in chrom.split(',')]
+    if not chrom:
+        raise ValueError("-c or --chrom must be in comma joined string e.g. chr1,chr2,ch3")
+    
+    sexchrom = [i.strip() for i in sexchrom.split(',')]
+    if not chrom:
+        raise ValueError("--sexchrom must be in comma joined string e.g. chr1,chr2,ch3")
+
     if no_sex:
         clean_chrom = []
         for i in chrom:
@@ -86,9 +95,9 @@ def cli(input, name, compare, ref, output, threads, max_len, bed, min_sv, chrom,
         chrom = clean_chrom
     
     # sort chromosome
-    chrom = sort_chrom(chrom)
+    if not no_sort:
+        chrom = sort_chrom(chrom)
 
-    
     # print parameters in verbose mode
     if verbose:
         ctx = click.get_current_context()
@@ -99,6 +108,6 @@ def cli(input, name, compare, ref, output, threads, max_len, bed, min_sv, chrom,
                 param_value = ctx.params[param_name]
                 logging.info(f"{param_name}: {param_value}")
 
-    return (input, name, compare, ref, output, threads, max_len, bed, min_sv, chrom, sexchrom, mincount, canonical, block, no_sex, only_snv, only_indel, only_sv, no_snv, no_indel, no_sv, no_double, verbose)
+    return (input, name, compare, ref, output, threads, max_len, bed, min_sv, chrom, sexchrom, mincount, canonical, block, no_sex, only_snv, only_indel, only_sv, no_snv, no_indel, no_sv, no_double, no_sort, verbose)
 
 

@@ -1,3 +1,0 @@
-Chromosome,TP,FP,FN,Precision,Recall,F1-score,Heterozygous phased count,Heterozygous phased percentage
-chr1,6,0,0,1.0,1.0,1.0,6,1.0
-ALL,6,0,0,1.0,1.0,1.0,6,1.0

@@ -113,11 +113,11 @@ def process_truth_count(truth_count: dict, max_len: int) -> int:
     for pos_list in truth_count.values():
         if len(pos_list) >= 2:
             pos_list.sort()
-            j = 1
+            j = 0
             for i in range(len(pos_list) - 1):
-                while (j < len(pos_list) - 1) and ((pos_list[j] - pos_list[i]) <= max_len):
+                while (j < len(pos_list)) and ((pos_list[j] - pos_list[i]) <= max_len):
                     j += 1
-                total_pairs += (j - i)
+                total_pairs += (j - i - 1)
 
 
     return total_pairs
