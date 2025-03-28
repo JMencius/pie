@@ -15,7 +15,7 @@ import logging
 @click.option("-t", "--threads", default = 24, type = int, help = "Maximum numbers of parallel threads [default: 24]")
 @click.option("-m", "--max-len", default = 250 * 10**3, type = int, help = "Maximum variant distance for pairwise calculation [default: 250000]")
 @click.option("-b", "--bed", default = None, type = str, help = r".bed file specifying genomic regions to include [default: None]")
-@click.option("--min-sv", default = 30, type = int, help = "Minimal length threshold of Structral Variant [default: 30]")
+@click.option("--min-sv", default = 30, type = int, help = "Minimal length threshold of Structral Variant [default: 30, ALT length > 30 bp is SV]")
 @click.option("--chrom", default = ','.join(["chr" + str(i) for i in range(1, 23)]), type = str, help = "Chromosome to evaluate,use comma to join chromosome name e.g. --chrom chr1,chr2,chr3 [default:chr1,chr2,chr3,...,chr22]")
 @click.option("--sexchrom", default = "chrX,chrY", type = str, help = "Sex chromosme,use comma to join chromosome name e.g. --sexchrom chrX,chrY [default: chrX,chrY]")
 @click.option("--mincount", default = 2, type = int, help = "Minimum numbers of phased sites in a phase block [default: 2]")
@@ -29,7 +29,7 @@ import logging
 @click.option("--no-indel", is_flag = True, help = "Ignore insertion and deletion")
 @click.option("--no-sv", is_flag = True, help = "Ignore structural variant")
 @click.option("--no-double", is_flag = True, help = "Ignore double heterozygous site")
-@click.option("--no-sort", is_flag = True, help = "Do not sort chromosome, directly use the -c or --chrom input order")
+@click.option("--no-sort", is_flag = True, help = "Do not sort chromosome or regions, directly use the input order")
 @click.option("--verbose", is_flag = True, help = "Enable verbose mode, printing parameters and progress to standard output")
 @click.version_option(version="0.7.0", prog_name = r"Phasing all-in-one evaluator (pie), based on Python 3.7+")
 def cli(input, name, compare, ref, output, threads, max_len, bed, min_sv, chrom, sexchrom, mincount, canonical, block, no_sex, only_snv, only_indel, only_sv, no_snv, no_indel, no_sv, no_double, no_sort, verbose) -> tuple:
