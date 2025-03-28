@@ -112,6 +112,16 @@ pie --verbose -i phase.vcf -c truth.vcf -r ref.fa --chrom chr6 --only-snv --bloc
 The actual performance may vary depending on factors such as size of `vcf`, I/O speed, memory speed, and CPU capabilities.
 
 
+## Acknowledgements
+`Pie` is dependent on the following libraries, we are grateful to all the developers/maintainers:
+- [click](https://github.com/pallets/click): Python command line
+- [cyvcf2](https://github.com/brentp/cyvcf2): VCF/BCF  processing
+- [pyfastx](https://github.com/lmdu/pyfastx): Reference FASTA processing
+- [sortedcontainers](https://github.com/grantjenks/python-sortedcontainers): Python Sorted Container Types
+
+
+
+
 
 
 
