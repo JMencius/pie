@@ -4,6 +4,8 @@
 Phasing all-In-one Evaluator, for haplotype phasing evaluation
 
 ## Installation
+Currently, `Pie` does not support online installation, but will be available through `pip` or `conda` upon publication
+
 1. Create new virtual environment
 ```
 conda create -n pie python=3.7;
@@ -26,7 +28,7 @@ pip install .;
 | `-o or --output` | Output file prefix | exmaple: ./test/output_name |
 
 ### Recommend flag
-Use `--verbose` to monitor the running process and enable detailed logging.
+Use `--verbose` to monitor the running process and enable detailed logging. 
 
 ```
 Usage: pie [OPTIONS] 
@@ -45,7 +47,7 @@ Pairwise length argument:
 
 Specific site or chromosome, SV definiton:
   -b, --bed TEXT         .bed file specifying genomic regions to include.
-  --min-sv INTEGER       Minimal length threshold of Structral Variant [default: 30], > 30 bp is SV
+  --min-sv INTEGER       Minimal length threshold of Structral Variant [default: 30, ALT length > 30 bp is SV]
   --chrom TEXT           Chromosome to evaluate,use comma to join chromosome name e.g. --chrom chr1,chr2,chr3 [default:chr1,chr2,chr3,...,chr22]
   --sexchrom TEXT        Sex chromosme,use comma to join chromosome name e.g. --sexchrom chrX,chrY [default: chrX,chrY]
   --mincount INTEGER     Minimum numbers of phased sites in a phase block [default: 2]
@@ -61,6 +63,7 @@ flag:
   --no-indel             Ignore insertion and deletion
   --no-sv                Ignore structural variant
   --no-double            Ignore double heterozygous site
+  --no-sort              Do not sort chromosome or regions, directly use the input order
   --verbose              Enable verbose mode, printing parameters and progress to standard output
   --version              Show the version and exit.
   -h, --help             Show this message and exit.
@@ -97,6 +100,17 @@ pie --verbose -i phase.vcf -c truth.vcf -r ref.fa --block -o ./output/more
 ```
 pie --verbose -i phase.vcf -c truth.vcf -r ref.fa --chrom chr6 --only-snv --block -o ./output/misc
 ```
+
+## Test data
+Small query and truth exmaple files are provided in [here](./tests) including three format:
+| Filename | Format | Description |
+|:---:|:---:|:---:|
+| small_query.vcf | VCF | Uncompressed VCF |
+| small_query.vcf.gz | VCF.GZ | Compressed VCF |
+| small_query.bcf | BCF | Binary VCF |
+
+Since the reading method is the same， only `small_truth.vcf` is provided for truth example file.
+
 
 ## Output file
 | Output suffix | Description | Condition |
