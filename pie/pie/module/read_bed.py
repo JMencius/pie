@@ -28,10 +28,10 @@ def read_bed(bedfile: str, chrom: list, no_sort: bool) -> tuple:
     else:
         sorted_out_dict = out_dict
     
-    if target_len <= 0:
+    if region_count <= 0:
         logging.error("No region specified in the BED file. Please ensure the BED file follows the standard tab-separated format")
         sys.exit(1)
     else:
-        logging.info(f"{target_len} region(s) specified in BED file")
+        logging.info(f"{region_count} region(s) specified in BED file")
 
     return (region_count, sorted_out_dict)

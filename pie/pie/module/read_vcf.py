@@ -28,7 +28,6 @@ def get_type(ref: str, alt: list, min_sv: int, left: int, right: int) -> tuple:
 
 def read_vcf(filename: str, working_chr: str, bed_target: dict, min_sv: int) -> dict:
     chr_variants = dict()
-
     for variant in VCF(filename, threads = 1):
         if variant.CHROM == working_chr:
             isphased = variant.gt_phases[0]
@@ -56,7 +55,6 @@ def read_vcf(filename: str, working_chr: str, bed_target: dict, min_sv: int) -> 
                         flag = False
                 if flag:
                     chr_variants[variant.POS] = current_variant
-    
     if not bed_target:
         return chr_variants
     else:

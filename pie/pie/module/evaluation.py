@@ -98,7 +98,7 @@ def cal_pse(query: str, truth: str, phase_variants, max_len: int) -> tuple:
         pse += dist
         
         current_pos += 1
-
+    
     return (pse, event)
 
 
@@ -123,7 +123,7 @@ def process_truth_count(truth_count: dict, max_len: int) -> int:
     return total_pairs
 
 
-def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, truth_count: dict, max_len: int, target_bed_list: list, present_chrom: str) -> dict:
+def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, truth_count: dict, max_len: int, target_bed_list: list, include_genotype: bool, genotype_FP: list) -> dict:
     len_list = list()
     total_snv, total_indel, total_sv, total_phase = 0, 0, 0, 0
     total_block = 0
@@ -131,7 +131,6 @@ def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, tru
     HD_denom, HD = 0, 0
     PSE_denom, PSE = 0, 0
     pairwise_FN = 0
-
     # calculate total pairs
     total_pairs = process_truth_count(truth_count, max_len)
 
@@ -176,9 +175,41 @@ def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, tru
 
     pairwise_FP = PSE
     pairwise_TP = PSE_denom - PSE
-    pairwise_FN = total_pairs - PSE_denom
-
-
+    if PSE_denom <= total_pairs:
+        pairwise_FN = total_pairs - PSE_denom
+    else:
+        pairwise_FN = 0
+    
+    # add genotype FP if --include_genotype is set
+    if include_genotype:
+        for b in chrom_block.values():
+            # filter out very small block
+            if (b.snv + b.indel + b.sv) < mincount:
+                continue
+            for i in b.phase_variants:
+                genotype_pairwise_FP = 0
+                flag = 0
+                for j in genotype_FP:
+                    if abs(i - j) <= max_len:
+                        flag = 1
+                        genotype_pairwise_FP += 1
+                    else:
+                        if flag:
+                            break
+                pairwise_FP += genotype_pairwise_FP
+                PSE_denom += genotype_pairwise_FP
+    
+        for i in range(len(genotype_FP)):
+            current = genotype_FP[i]
+            flag = 0
+            for j in genotype_FP[i: ]:
+                if abs(j - current) <= max_len:
+                    flag = 1
+                    pairwise_FP += 1
+                    PSE_denom += 1
+                else:
+                    if flag:
+                        break
     pairwise_precision, pairwise_recall, pairwise_f1 = cal_all(pairwise_TP, pairwise_FP, pairwise_FN)
 
     results={"total_phase": total_phase,

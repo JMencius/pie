@@ -25,7 +25,7 @@ def main():
    
     if isinstance(param, int):
         sys.exit(0)
-    input, name, compare, ref, output, threads, max_len, bed, min_sv, chrom, sexchrom, mincount, canonical, block, no_sex, only_snv, only_indel, only_sv, no_snv, no_indel, no_sv, no_double, no_sort, verbose = param
+    input, name, compare, ref, output, threads, max_len, bed, min_sv, chrom, sexchrom, mincount, canonical, block, no_sex, only_snv, only_indel, only_sv, no_snv, no_indel, no_sv, no_double, no_sort, include_genotype, verbose = param
 
     logging.basicConfig(level = logging.DEBUG, format = "%(asctime)s - %(levelname)s - %(message)s")
     if verbose:
@@ -51,10 +51,10 @@ def main():
     with Pool(threads) as p:
         query_vcf = p.starmap(read_vcf, [(input, c, bed_target, min_sv) for c in chrom])
 
+
     logging.info("Reading truth VCF file")
     with Pool(threads) as p:
         truth_vcf = p.starmap(read_vcf, [(compare, c, bed_target, min_sv) for c in chrom])
-
 
     logging.info("Evaluating genotype and intersecting blocks")
     # operate in normal mode
@@ -66,7 +66,7 @@ def main():
     if not bed_target:
         target_bed_list = None
         with Pool(threads) as p:
-            intersect_result = p.starmap(intersect, [(query_vcf[i], truth_vcf[i], chrom[i], filters) for i in range(len(chrom))])
+            intersect_result = p.starmap(intersect, [(query_vcf[i], truth_vcf[i], chrom[i], filters, include_genotype) for i in range(len(chrom))])
         
     else:
         # flatten dict of list into dict
@@ -81,19 +81,23 @@ def main():
         # operate in bed mode
         target_bed_list = list(query_pool.keys())
         with Pool(threads) as p:
-            intersect_result = p.starmap(intersect, [(query_pool[i], truth_pool[i], i[0], filters) for i in target_bed_list])
+            intersect_result = p.starmap(intersect, [(query_pool[i], truth_pool[i], i[0], filters, include_genotype) for i in target_bed_list])
 
     blocks = [i[0] for i in intersect_result]
     genotype_result = [i[1] for i in intersect_result]
     truth_count = [i[2] for i in intersect_result]
     phase_count = [i[3] for i in intersect_result]   
+    genotype_FP = [i[4] for i in intersect_result]
+
 
     logging.info("Writing genotype result")
     write_genotype(genotype_result, phase_count, output, chrom, target_bed_list) 
+
     
     logging.info("Evluating phase blocks")
     with Pool(threads) as r:
-        evaluation_results = r.starmap(blockwise_evaluate, [(blocks[i], len_dict, mincount, truth_count[i], max_len, target_bed_list, chrom[i]) for i in range(len(blocks))])
+        evaluation_results = r.starmap(blockwise_evaluate, [(blocks[i], len_dict, mincount, truth_count[i], max_len, target_bed_list, include_genotype, genotype_FP[i]) for i in range(len(blocks))])
+
 
     if not target_bed_list:
         logging.info("Calculating NG50 metrics")

@@ -106,7 +106,7 @@ def write_evaluation(output: str, evaluation_results: list, chrom: list, name: s
 
             # calculate and write metrics
             overall_precision, overall_recall, overall_f1 = cal_all(total_pairwise_TP, total_pairwise_FP, total_pairwise_FN)
-            overall_result = [name, total_phase, total_snv, total_indel, total_sv, total_block, total_se, safediv(total_se, total_se_denom), total_hd, safediv(total_hd, total_hd_denom), total_pse_denom, safediv(toal_pse, total_pse_denom), overall_precision, overall_recall, overall_f1]
+            overall_result = [name, total_phase, total_snv, total_indel, total_sv, total_block, total_se, safediv(total_se, total_se_denom), total_hd, safediv(total_hd, total_hd_denom), total_pse_denom, safediv(total_pse, total_pse_denom), overall_precision, overall_recall, overall_f1]
             f.write(','.join([str(t) for t in overall_result]))
             f.write('\n')
 
