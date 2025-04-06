@@ -64,6 +64,8 @@ flag:
   --no-sv                Ignore structural variant
   --no-double            Ignore double heterozygous site
   --no-sort              Do not sort chromosome or regions, directly use the input order
+   --include-genotype    Including the impact of variant calling of genotype on phasing results, use to compare different
+                         pipleline, such as alignment-based phasing and de-novo assembly
   --verbose              Enable verbose mode, printing parameters and progress to standard output
   --version              Show the version and exit.
   -h, --help             Show this message and exit.
@@ -122,7 +124,7 @@ Since the reading method is the same， only `small_truth.vcf` is provided for t
 
 
 ## Resouce consumption
-`Pie` is expected to completed evaluation within minutes.
+`Pie` is expected to completed evaluation within minutes with default 24 threads.
 The actual performance may vary depending on factors such as size of `vcf`, I/O speed, memory speed, and CPU capabilities.
 
 
