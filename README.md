@@ -30,6 +30,7 @@ pip install .;
 ### Recommend flag
 Use `--verbose` to monitor the running process and enable detailed logging. 
 
+### Complete options
 ```
 Usage: pie [OPTIONS] 
 
@@ -124,8 +125,8 @@ Since the reading method is the same， only `small_truth.vcf` is provided for t
 
 
 ## Resouce consumption
-`Pie` is expected to completed evaluation within minutes with default 24 threads.
-The actual performance may vary depending on factors such as size of `vcf`, I/O speed, memory speed, and CPU capabilities.
+`Pie` is expected to complete evaluation within minutes with default 24 threads.
+The actual performance may vary depending on factors such as size of input file, input file format, I/O speed, memory speed, CPU capabilities, and many other aspects.
 
 
 ## Acknowledgements
