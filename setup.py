@@ -18,10 +18,10 @@ setup(
         "click>=8.1.8",
         "cyvcf2>=0.31.1",
         "sortedcontainers>=2.4.0",
-        "pyfastx>=2.2.0"
+        "pyfastx>=2.2.0",
         ],
     extras_require = {
-        "dev": ["pytest"],
+        "dev": ["pytest", "lmdb>=1.6.2"],
         },
     entry_points={
     "console_scripts": [

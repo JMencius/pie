@@ -13,8 +13,10 @@ from pie.module.write_genotype import write_genotype
 from pie.module.check_filters import check_filters
 from pie.module.evaluation import blockwise_evaluate
 from pie.module.raw_metrics import cal_NG50
+from pie.module.raw_metrics import get_raw_block_length
 from pie.module.write_block import write_block
 from pie.module.write_evaluation import write_evaluation
+from pie.module.write_lmdb import write_lmdb
 
 
 
@@ -25,7 +27,7 @@ def main():
    
     if isinstance(param, int):
         sys.exit(0)
-    input, name, compare, ref, output, threads, max_len, bed, min_sv, chrom, sexchrom, mincount, canonical, block, no_sex, only_snv, only_indel, only_sv, no_snv, no_indel, no_sv, no_double, no_sort, include_genotype, verbose = param
+    input, name, compare, ref, output, threads, max_len, bed, min_sv, chrom, sexchrom, mincount, canonical, block, no_sex, only_snv, only_indel, only_sv, no_snv, no_indel, no_sv, no_double, no_sort, include_genotype, lmdb, verbose = param
 
     logging.basicConfig(level = logging.DEBUG, format = "%(asctime)s - %(levelname)s - %(message)s")
     if verbose:
@@ -96,21 +98,33 @@ def main():
     
     logging.info("Evluating phase blocks")
     with Pool(threads) as r:
-        evaluation_results = r.starmap(blockwise_evaluate, [(blocks[i], len_dict, mincount, truth_count[i], max_len, target_bed_list, include_genotype, genotype_FP[i]) for i in range(len(blocks))])
+        evaluation_results = r.starmap(blockwise_evaluate, [(blocks[i], len_dict, mincount, truth_count[i], max_len, target_bed_list, include_genotype, genotype_FP[i], lmdb) for i in range(len(blocks))])
+
+    if lmdb:
+        lmdb_list = [i[1] for i in evaluation_results]
+        evaluation_results = [i[0] for i in evaluation_results]
+
+        logging.info("Outputting intermediate result to lmdb")
+        write_lmdb(lmdb_list, chrom, output)              
 
 
-    if not target_bed_list:
-        logging.info("Calculating NG50 metrics")
+    logging.info("Calculating NG50 metrics")
+    if not bed_target:
         raw_blocks_start_end, NG50 = cal_NG50(query_vcf, len_dict, chrom, threads)
     else:
+        raw_blocks_start_end = list()
+        for i,j in query_pool.items():
+            tem, _ = get_raw_block_length(j)        
+            
+            for t in tem:
+                raw_blocks_start_end.append([i[0], t[0], t[1]])
+        
         NG50 = None
-
-
     # Output to files
     logging.info("Writing output file")
     if block:
         logging.info("Writing block bed file")
-        write_block(raw_blocks_start_end, output, chrom)
+        write_block(raw_blocks_start_end, output, chrom, target_bed_list)
     
 
     logging.info("Writing evaluation output file")

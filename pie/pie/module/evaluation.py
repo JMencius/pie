@@ -42,6 +42,40 @@ def hamming_comparison(str1, str2):
 
 
 
+def cal_se_debug(hamming_list: list, variant_pos: list, working_chr: str) -> tuple:
+    """
+    calculate traditional switch error(SE)
+    """
+    event_count = len(hamming_list) - 1
+    # 'S' means Start
+    flag = 'S'
+    se_count = 0
+    c = 0
+    for i in hamming_list:
+        if i == 1:
+            if flag == 0:
+                se_count += 1
+                print(f"{working_chr} {variant_pos[c]}-{variant_pos[c - 1]} SE")
+                flag = 1
+
+            if flag == 'S':
+                flag = 1
+
+
+        if i == 0:
+            if flag == 1:
+                se_count += 1
+                print(f"{working_chr} {variant_pos[c]}-{variant_pos[c - 1]} SE")
+                flag = 0
+            if flag == 'S':
+                flag = 0
+        c += 1
+
+    return (se_count, event_count)
+
+
+
+
 def cal_se(hamming_list: list) -> tuple:
     """
     calculate traditional switch error(SE)
@@ -123,7 +157,7 @@ def process_truth_count(truth_count: dict, max_len: int) -> int:
     return total_pairs
 
 
-def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, truth_count: dict, max_len: int, target_bed_list: list, include_genotype: bool, genotype_FP: list) -> dict:
+def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, truth_count: dict, max_len: int, target_bed_list: list, include_genotype: bool, genotype_FP: list, lmdb: bool) -> dict:
     len_list = list()
     total_snv, total_indel, total_sv, total_phase = 0, 0, 0, 0
     total_block = 0
@@ -133,6 +167,7 @@ def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, tru
     pairwise_FN = 0
     # calculate total pairs
     total_pairs = process_truth_count(truth_count, max_len)
+    lmdb_list = list()
 
     for b in chrom_block.values():
         # filter out very small block
@@ -158,12 +193,15 @@ def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, tru
         else:
             compare_list = hamming_comparison(b.queryleft, b.truthleft)
             compare_subject = b.truthleft
-
+        
+        lmdb_list.append(compare_list)
+        
         HD_denom += len(b.queryleft)
         HD += hd
         
         # calculate switch error rate
         se_count, se_event_count = cal_se(compare_list)
+        ## se_count, se_event_count = cal_se_debug(compare_list, list(b.subject.keys()), b.chrom)
         SE += se_count
         SE_denom += se_event_count
         
@@ -233,7 +271,29 @@ def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, tru
             }
     
 
-    return results
+    if lmdb:
+        lmdb_dict = dict()
+        count = 0
+        for k, b in chrom_block.items():
+            # filter out very small block
+            if (b.snv + b.indel + b.sv) < mincount:
+                continue
+            
+            subject_hamming = lmdb_list[count]
+    
+            for uv in b.unphase_variants:
+                lmdb_dict[uv] = {"ps": "unphase"}
+            
+            for pv, h in zip(b.phase_variants, subject_hamming):
+                lmdb_dict[pv] = {"ps": k, "hc": h}
+    
+            count += 1
+
+
+    if lmdb:
+        return (results, lmdb_dict)
+    else:
+        return results
 
 
 
