@@ -124,13 +124,11 @@ def intersect(query: dict, truth: dict, chrom: str, filters: dict, include_genot
 
     for site in unphase_variant:
         in_block = find_closest_block(site, blocks_start_end)
-        if not in_block:
-            interblock_unphase += 1
-        else:
-            for b in phaseblock.values():
-                if (b.start, b.end) == in_block:
-                    b.add_unphased_variant(site)
-    genotype_result = {"TP": genotype_TP, "FP": genotype_FP, "FN": genotype_FN, "PC": total_phase_count, "UC": total_unphase_count, "IUC": interblock_unphase}
+
+        for b in phaseblock.values():
+            if (b.start, b.end) == in_block:
+                b.add_unphased_variant(site)
+    genotype_result = {"TP": genotype_TP, "FP": genotype_FP, "FN": genotype_FN, "PC": total_phase_count, "UC": total_unphase_count}
 
     genotype_FP_sites.sort()
 
@@ -145,7 +143,13 @@ def find_closest_block(site: int, intervals: list):
             temp[i] = min(site - i[0], i[1] - site)
     
     if not temp:
-        return None
+        temp = dict()
+        for i in intervals:
+            temp[i] = min(abs(site - i[0]), abs(i[1] - site))
+        temp_list = list(temp.items())
+        temp_list.sort(key = lambda K : K[1])
+        return temp_list[0][0]
+
     else:
         temp_list = list(temp.items())
         temp_list.sort(key = lambda K : K[1])

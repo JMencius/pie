@@ -152,8 +152,9 @@ def process_truth_count(truth_count: dict, max_len: int) -> int:
                 while (j < len(pos_list)) and ((pos_list[j] - pos_list[i]) <= max_len):
                     j += 1
                 total_pairs += (j - i - 1)
-
-
+        print(pos_list)
+        print(total_pairs)
+    
     return total_pairs
 
 
@@ -277,10 +278,15 @@ def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, tru
         for k, b in chrom_block.items():
             # filter out very small block
             if (b.snv + b.indel + b.sv) < mincount:
-                continue
+                for pv in b.phase_variants:
+                    lmdb_dict[pv] = {"ps": "unphase"}
+                for uv in b.unphase_variants:
+                    lmdb_dict[uv] = {"ps": "unphase"}
+                continue    
             
             subject_hamming = lmdb_list[count]
-    
+            
+   
             for uv in b.unphase_variants:
                 lmdb_dict[uv] = {"ps": "unphase"}
             

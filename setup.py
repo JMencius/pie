@@ -19,10 +19,9 @@ setup(
         "cyvcf2>=0.31.1",
         "sortedcontainers>=2.4.0",
         "pyfastx>=2.2.0",
+        "lmdb>=1.6.2",
+        "pytest",
         ],
-    extras_require = {
-        "dev": ["pytest", "lmdb>=1.6.2"],
-        },
     entry_points={
     "console_scripts": [
         "pie = pie.pie:main",
