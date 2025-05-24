@@ -152,8 +152,6 @@ def process_truth_count(truth_count: dict, max_len: int) -> int:
                 while (j < len(pos_list)) and ((pos_list[j] - pos_list[i]) <= max_len):
                     j += 1
                 total_pairs += (j - i - 1)
-        print(pos_list)
-        print(total_pairs)
     
     return total_pairs
 
