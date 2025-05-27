@@ -72,7 +72,7 @@ flag:
 ```
 
 ## Exmaples
-Supoose `phase.vcf` is the sample VCF file to be evaluated against the ground truth VCF file (`truth.vcf`).
+Suppose `phase.vcf` is the sample VCF file to be evaluated against the ground truth VCF file (`truth.vcf`).
 1. (Comprehensive) Evaluate all autosome
 ```
 pie --verbose -i phase.vcf -c truth.vcf -r ref.fa -o ./output/comprehensive
