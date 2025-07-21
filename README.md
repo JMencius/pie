@@ -111,7 +111,9 @@ Small query and truth exmaple files are provided in [here](./tests) including th
 | small_query.vcf.gz | VCF.GZ | Compressed VCF |
 | small_query.bcf | BCF | Binary VCF |
 
-Since the reading method is the same， only `small_truth.vcf` is provided for truth example file.
+`small_truth.vcf` is provided as the truth.
+The `VCF` foramt follows regulations in <https://samtools.github.io/hts-specs/VCFv4.1.pdf>
+
 
 
 ## Output file
