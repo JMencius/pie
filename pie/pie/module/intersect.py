@@ -1,3 +1,4 @@
+import logging
 from pie.module.pie_class import pievariant
 from pie.module.pie_class import block
 
@@ -70,6 +71,7 @@ def intersect(query: dict, truth: dict, chrom: str, filters: dict, include_genot
         else:
             query_variant = query[i]
             truth_variant = truth[i]
+            working_chr = query_variant.chrom
             check_result = check_genotype(query_variant, truth_variant)
 
             if check_result == 0:
@@ -124,10 +126,21 @@ def intersect(query: dict, truth: dict, chrom: str, filters: dict, include_genot
 
     for site in unphase_variant:
         in_block = find_closest_block(site, blocks_start_end)
+        
+        if in_block == "ALL_UNPHASE":
+            if "ALL_UNPHASE" not in phaseblock:
+                phaseblock["ALL_UNPHASE"] = block(working_chr, "ALL_UNPHASE")
+            phaseblock["ALL_UNPHASE"].add_unphased_variant(site)        
 
-        for b in phaseblock.values():
-            if (b.start, b.end) == in_block:
-                b.add_unphased_variant(site)
+        else:
+            for b in phaseblock.values():
+                if (b.start, b.end) == in_block:
+                    b.add_unphased_variant(site)
+    
+    if "ALL_UNPHASE" in phaseblock:
+        logging.warning(f"No phased blocks in {working_chr}")
+
+
     genotype_result = {"TP": genotype_TP, "FP": genotype_FP, "FN": genotype_FN, "PC": total_phase_count, "UC": total_unphase_count}
 
     genotype_FP_sites.sort()
@@ -138,6 +151,9 @@ def intersect(query: dict, truth: dict, chrom: str, filters: dict, include_genot
 
 def find_closest_block(site: int, intervals: list):
     temp = dict()
+    if len(intervals) == 0:
+        return "ALL_UNPHASE"
+
     for i in intervals:
         if i[0] < site < i[1]:
             temp[i] = min(site - i[0], i[1] - site)

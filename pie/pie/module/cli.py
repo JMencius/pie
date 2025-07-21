@@ -33,7 +33,7 @@ import logging
 @click.option("--include-genotype", is_flag = True, help = "Including the impact of variant calling of genotype on phasing results, use to compare different pipleline, such as alignment-based and de-novo assembly")
 @click.option("--lmdb", is_flag = True, hidden = True, help = "Output intermediate hamming result as .lmdb file")
 @click.option("--verbose", is_flag = True, help = "Enable verbose mode, printing parameters and progress to standard output")
-@click.version_option(version="0.9.0", prog_name = r"Phasing all-in-one evaluator (pie), based on Python 3.7+")
+@click.version_option(version="0.10.0", prog_name = r"Phasing all-in-one evaluator (pie), based on Python 3.7+")
 def cli(input, name, compare, ref, output, threads, max_len, bed, min_sv, chrom, sexchrom, mincount, canonical, block, no_sex, only_snv, only_indel, only_sv, no_snv, no_indel, no_sv, no_double, no_sort, include_genotype, lmdb, verbose) -> tuple:
 
     # set logging
