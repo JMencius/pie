@@ -112,7 +112,7 @@ Small query and truth exmaple files are provided in [here](./tests) including th
 | small_query.bcf | BCF | Binary VCF |
 
 `small_truth.vcf` is provided as the truth.
-The `VCF` foramt follows regulations in <https://samtools.github.io/hts-specs/VCFv4.1.pdf>
+The `VCF` format follows regulations in <https://samtools.github.io/hts-specs/VCFv4.1.pdf>
 
 
 
