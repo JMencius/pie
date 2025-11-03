@@ -6,6 +6,7 @@ Phasing all-In-one Evaluator, for haplotype phasing evaluation
 ## Installation
 Currently, `Pie` does not support online installation, but will be available through `pip` or `conda` upon publication
 
+### Use `pip` to conduct local installation
 1. Create new virtual environment
 ```
 conda create -n pie python=3.7;
@@ -18,8 +19,8 @@ pip install .;
 ```
 
 
-## Usage
-### Required argument
+## Usages
+### Required arguments
 | Parameters | Description | Format or example |
 |:---:|:---:|:---:| 
 | `-i or --input` | file for evaluation | .vcf / .vcf.gz |
@@ -30,6 +31,7 @@ pip install .;
 ### Recommend flag
 Use `--verbose` to monitor the running process and enable detailed logging. 
 
+### Full usages
 ```
 Usage: pie [OPTIONS] 
 
@@ -104,7 +106,7 @@ pie --verbose -i phase.vcf -c truth.vcf -r ref.fa --chrom chr6 --only-snv --bloc
 ```
 
 ## Test data
-Small query and truth exmaple files are provided in [here](./tests) including three format:
+Small query and truth test files are provided in [here](./tests) including three formats:
 | Filename | Format | Description |
 |:---:|:---:|:---:|
 | small_query.vcf | VCF | Uncompressed VCF |
@@ -112,6 +114,7 @@ Small query and truth exmaple files are provided in [here](./tests) including th
 | small_query.bcf | BCF | Binary VCF |
 
 `small_truth.vcf` is provided as the truth.
+
 The `VCF` format follows regulations in <https://samtools.github.io/hts-specs/VCFv4.1.pdf>
 
 
@@ -126,7 +129,8 @@ The `VCF` format follows regulations in <https://samtools.github.io/hts-specs/VC
 
 
 ## Resouce consumption
-`Pie` is expected to completed evaluation within minutes with default 24 threads.
+`Pie` is expected to completed evaluation within minutes with the default 24 threads on a stardard X86 platfrom.
+
 The actual performance may vary depending on factors such as size of `vcf`, I/O speed, memory speed, and CPU capabilities.
 
 
