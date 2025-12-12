@@ -1,5 +1,7 @@
 <img src="pie_logo.png" width = "100">  
 
+# VCF alignment problem or format standard
+
 # pie
 Phasing all-In-one Evaluator, for haplotype phasing evaluation
 
