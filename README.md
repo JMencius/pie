@@ -11,7 +11,7 @@ Currently, `Pie` does not support online installation, but will be available thr
 ### Use `pip` to conduct local installation
 1. Create new virtual environment
 ```
-conda create -n pie python=3.7;
+conda create -n pie python=3.8;
 conda activate pie;
 ```
 
