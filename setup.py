@@ -7,19 +7,20 @@ setup(
         "pie.module": ["*.py"],
         "pie.module.lib": ["hamming.so"],
     },
-    version = "0.7.1",
+    version = "0.11.0",
     description = "Phasing all-in-one evaluator",
     author = "Jun Mencius",
     author_email = "zjmeng22@m.fudan.edu.cn",
     url = "https://github.com/JMencius/pie",
     keywords = ["pie", "haplotype", "phasing", "benchmark"],
-    python_requires = ">=3.7",
+    python_requires = ">=3.8",
     install_requires = [
         "click>=8.1.8",
-        "cyvcf2>=0.31.1",
+        "cyvcf2>=0.31.3",
         "sortedcontainers>=2.4.0",
         "pyfastx>=2.2.0",
         "lmdb>=1.6.2",
+        "numba>=0.58.1"
         "pytest",
         ],
     entry_points={

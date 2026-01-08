@@ -27,7 +27,7 @@ def main():
    
     if isinstance(param, int):
         sys.exit(0)
-    input, name, compare, ref, output, threads, max_len, bed, min_sv, chrom, sexchrom, mincount, canonical, block, no_sex, only_snv, only_indel, only_sv, no_snv, no_indel, no_sv, no_double, no_sort, include_genotype, lmdb, verbose = param
+    input, name, compare, ref, output, threads, max_len, bed, min_sv, chrom, sexchrom, mincount, canonical, block, no_sex, only_snv, only_indel, only_sv, no_snv, no_indel, no_sv, no_double, no_sort, lmdb, verbose = param
 
     logging.basicConfig(level = logging.DEBUG, format = "%(asctime)s - %(levelname)s - %(message)s")
     if verbose:
@@ -68,7 +68,7 @@ def main():
     if not bed_target:
         target_bed_list = None
         with Pool(threads) as p:
-            intersect_result = p.starmap(intersect, [(query_vcf[i], truth_vcf[i], chrom[i], filters, include_genotype) for i in range(len(chrom))])
+            intersect_result = p.starmap(intersect, [(query_vcf[i], truth_vcf[i], chrom[i], filters) for i in range(len(chrom))])
         
     else:
         # flatten dict of list into dict
@@ -83,7 +83,7 @@ def main():
         # operate in bed mode
         target_bed_list = list(query_pool.keys())
         with Pool(threads) as p:
-            intersect_result = p.starmap(intersect, [(query_pool[i], truth_pool[i], i[0], filters, include_genotype) for i in target_bed_list])
+            intersect_result = p.starmap(intersect, [(query_pool[i], truth_pool[i], i[0], filters) for i in target_bed_list])
 
     blocks = [i[0] for i in intersect_result]
     genotype_result = [i[1] for i in intersect_result]
@@ -97,8 +97,9 @@ def main():
 
     
     logging.info("Evluating phase blocks")
+    logging.getLogger("numba").setLevel(logging.ERROR)
     with Pool(threads) as r:
-        evaluation_results = r.starmap(blockwise_evaluate, [(blocks[i], len_dict, mincount, truth_count[i], max_len, target_bed_list, include_genotype, genotype_FP[i], lmdb) for i in range(len(blocks))])
+        evaluation_results = r.starmap(blockwise_evaluate, [(blocks[i], len_dict, mincount, truth_count[i], max_len, target_bed_list, genotype_FP[i], lmdb) for i in range(len(blocks))])
 
     if lmdb:
         lmdb_list = [i[1] for i in evaluation_results]

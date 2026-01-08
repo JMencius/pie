@@ -4,9 +4,9 @@ import ctypes
 import os
 import sys
 import logging
-
-
-
+import itertools
+import numpy as np
+from numba import njit
 
 # load C so
 
@@ -74,8 +74,6 @@ def cal_se_debug(hamming_list: list, variant_pos: list, working_chr: str) -> tup
     return (se_count, event_count)
 
 
-
-
 def cal_se(hamming_list: list) -> tuple:
     """
     calculate traditional switch error(SE)
@@ -103,71 +101,98 @@ def cal_se(hamming_list: list) -> tuple:
     
     return (se_count, event_count)
 
-
-
-def cal_pse(query: str, truth: str, phase_variants, max_len: int) -> tuple:
-    """
-    calculate pairwise swtich error(pse)
-    """
-    q, t = query, truth
-    pse = 0
-    event = 0
-    cut_point = 1
-    current_pos = 0
-    while current_pos < len(q) - 1:
-        while (cut_point < len(q)) and ((phase_variants[cut_point] - phase_variants[current_pos]) <= max_len):
-            cut_point += 1
-
-        q1 = q[current_pos]
-        t1 = t[current_pos]
-        
-        subject_q = q[current_pos + 1 : cut_point]
-        subject_t = t[current_pos + 1 : cut_point]
-
-        dist = c_hamming_distance(subject_q, subject_t)
-        #print(dist)
-        if q1 != t1:
-            dist = len(subject_q) - dist
-        event += len(subject_q)
-        pse += dist
-        
-        current_pos += 1
+@njit(fastmath=True, nogil=True)
+def calc_internal_tp_fp(sites, v0, v1, max_len):
+    tp = 0.0
+    fp = 0.0
+    n = len(sites)
     
-    return (pse, event)
+
+    for i in range(n):
+        site_i = sites[i]
+        val0_i = v0[i]
+        val1_i = v1[i]
+        
+        for j in range(i + 1, n):
+            site_j = sites[j]
+            if site_i > site_j:
+                dist = site_i - site_j
+            else:
+                dist = site_j - site_i
+                
+            if dist <= max_len:
+                w = 1.0
+            else:
+                w = 1.0 / (dist - max_len)
+            val0_j = v0[j]
+            val1_j = v1[j]
+            
+            if (val0_i * val0_j) == (val1_i * val1_j):
+                tp += w
+            else:
+                fp += w
+     
+           
+    return tp, fp
 
 
 
-def Cn2(n: int) -> int:
-    return n * (n - 1) / 2
+@njit(fastmath=True, nogil=True)
+def fast_calc_weights(arr_a, arr_b, truth_a, truth_b, max_len):
+    total_weight = 0.0
+    n_a = len(arr_a)
+    n_b = len(arr_b)
 
+    for i in range(n_a):
+        val_a = arr_a[i]
+        t_a = truth_a[i]
+        
+        for j in range(n_b):
+            val_b = arr_b[j]
+            t_b = truth_b[j]
+            
+            if t_a != t_b:
+                continue
 
+            if val_a > val_b:
+                dist = val_a - val_b
+            else:
+                dist = val_b - val_a
 
-def process_truth_count(truth_count: dict, max_len: int) -> int:
-    total_pairs = 0
-    for pos_list in truth_count.values():
-        if len(pos_list) >= 2:
-            pos_list.sort()
-            j = 0
-            for i in range(len(pos_list) - 1):
-                while (j < len(pos_list)) and ((pos_list[j] - pos_list[i]) <= max_len):
-                    j += 1
-                total_pairs += (j - i - 1)
+            if dist <= max_len:
+                total_weight += 1.0
+            else:
+                total_weight += 1.0 / (dist - max_len)
+
+    return total_weight
+
+def evaluate_interblock(listA, listB, truth_dict, max_len):
+    arr_a = np.array(listA, dtype=np.int64)
+    arr_b = np.array(listB, dtype=np.int64)
+
+    unique_labels = sorted(list(set(truth_dict.values())))
     
-    return total_pairs
+    label_map = {label: idx for idx, label in enumerate(unique_labels)}
+
+    truth_a_list = [label_map[truth_dict[x]] for x in listA]
+    truth_b_list = [label_map[truth_dict[x]] for x in listB]
+
+    truth_a = np.array(truth_a_list, dtype=np.int8)
+    truth_b = np.array(truth_b_list, dtype=np.int8)
+    
+    return fast_calc_weights(arr_a, arr_b, truth_a, truth_b, max_len)
 
 
-def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, truth_count: dict, max_len: int, target_bed_list: list, include_genotype: bool, genotype_FP: list, lmdb: bool) -> dict:
+def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, truth_dict: dict, max_len: int, target_bed_list: list, genotype_FP: list, lmdb: bool) -> dict:
     len_list = list()
     total_snv, total_indel, total_sv, total_phase = 0, 0, 0, 0
     total_block = 0
     SE_denom, SE = 0, 0
     HD_denom, HD = 0, 0
     PSE_denom, PSE = 0, 0
-    pairwise_FN = 0
-    # calculate total pairs
-    total_pairs = process_truth_count(truth_count, max_len)
     lmdb_list = list()
 
+    # calculate traditional metrics
     for b in chrom_block.values():
         # filter out very small block
         if (b.snv + b.indel + b.sv) < mincount:
@@ -203,50 +228,29 @@ def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, tru
         ## se_count, se_event_count = cal_se_debug(compare_list, list(b.subject.keys()), b.chrom)
         SE += se_count
         SE_denom += se_event_count
-        
-        # calculate pairwise switch error
-        pse_count, pse_event_count = cal_pse(b.queryleft, compare_subject, b.phase_variants, max_len)
-        PSE += pse_count
-        PSE_denom += pse_event_count
-        
+    
+    pairwise_TP, pairwise_FP, pairwise_FN = 0, 0, 0
+    # calculate pairwise metrics
+    blocks = list(chrom_block.values())
+    for i in range(len(blocks)):
+        v0_arr = np.array(blocks[i].querysymbol, dtype = np.int8)
+        v1_arr = np.array(blocks[i].truthsymbol, dtype = np.int8)
+        if len(v0_arr) >= 2 and len(v1_arr) >= 2:
+            tp, fp = calc_internal_tp_fp(np.array(blocks[i].phase_variants, dtype = np.int64), v0_arr, v1_arr, max_len)
+            pairwise_TP += tp
+            pairwise_FP += fp
 
-    pairwise_FP = PSE
-    pairwise_TP = PSE_denom - PSE
-    if PSE_denom <= total_pairs:
-        pairwise_FN = total_pairs - PSE_denom
-    else:
-        pairwise_FN = 0
+        fn = evaluate_interblock(list(blocks[i].unphase_variants), list(blocks[i].phase_variants), truth_dict, max_len)
+        pairwise_FN += fn
     
-    # add genotype FP if --include_genotype is set
-    if include_genotype:
-        for b in chrom_block.values():
-            # filter out very small block
-            if (b.snv + b.indel + b.sv) < mincount:
-                continue
-            for i in b.phase_variants:
-                genotype_pairwise_FP = 0
-                flag = 0
-                for j in genotype_FP:
-                    if abs(i - j) <= max_len:
-                        flag = 1
-                        genotype_pairwise_FP += 1
-                    else:
-                        if flag:
-                            break
-                pairwise_FP += genotype_pairwise_FP
-                PSE_denom += genotype_pairwise_FP
+    blocks_variants = [list(i.phase_variants) + list(i.unphase_variants) for i in blocks]    
+    for i in range(len(blocks_variants)):
+        for j in range(i + 1, len(blocks_variants)):
+            fn = evaluate_interblock(blocks_variants[i], blocks_variants[j], truth_dict, max_len)
+            pairwise_FN += fn
+
     
-        for i in range(len(genotype_FP)):
-            current = genotype_FP[i]
-            flag = 0
-            for j in genotype_FP[i: ]:
-                if abs(j - current) <= max_len:
-                    flag = 1
-                    pairwise_FP += 1
-                    PSE_denom += 1
-                else:
-                    if flag:
-                        break
+
     pairwise_precision, pairwise_recall, pairwise_f1 = cal_all(pairwise_TP, pairwise_FP, pairwise_FN)
 
     results={"total_phase": total_phase,

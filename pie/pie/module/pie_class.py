@@ -39,11 +39,23 @@ class block:
         self.queryleft: str = ""
         self.truthleft: str = ""
         self.truthright: str = ""
+        self.querysymbol: list = list()
+        self.truthsymbol: list = list()
 
     def add_phased_variant(self, query_variant, truth_variant):
         if truth_variant.pos == query_variant.pos:
             self.phase_variants.append(query_variant.pos)
             self.subject[query_variant.pos] = (query_variant.left, truth_variant.left, truth_variant.right)
+
+            if truth_variant.left < truth_variant.right:
+                self.truthsymbol.append(-1)
+            else:
+                self.truthsymbol.append(1)
+
+            if query_variant.left < query_variant.right:
+                self.querysymbol.append(-1)
+            else:
+                self.querysymbol.append(1)
 
             if query_variant.type == "SNV":
                 self.snv += 1
