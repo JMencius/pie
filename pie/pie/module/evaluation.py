@@ -115,14 +115,14 @@ def cal_pse(query: str, truth: str, phase_variants, max_len: int) -> tuple:
     cut_point = 1
     current_pos = 0
     while current_pos < len(q) - 1:
-        while (cut_point < len(q) - 1) and ((phase_variants[cut_point] - phase_variants[current_pos]) <= max_len):
+        while (cut_point < len(q)) and ((phase_variants[cut_point] - phase_variants[current_pos]) <= max_len):
             cut_point += 1
 
         q1 = q[current_pos]
         t1 = t[current_pos]
         
-        subject_q = q[current_pos + 1 : cut_point + 1]
-        subject_t = t[current_pos + 1 : cut_point + 1]
+        subject_q = q[current_pos + 1 : cut_point]
+        subject_t = t[current_pos + 1 : cut_point]
 
         dist = c_hamming_distance(subject_q, subject_t)
         #print(dist)
