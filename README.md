@@ -1,12 +1,11 @@
 <img src="pie_logo.png" width = "100">  
 
-# VCF alignment problem or format standard
-
 # pie
 Phasing all-In-one Evaluator, for haplotype phasing evaluation
 
 ## Installation
-Currently, `Pie` does not support online installation, but will be available through `pip` or `conda` upon publication
+Currently, `Pie` does not support online installation, but will be available through `pip` or `conda` upon publication.
+Installation will finish in a few minutes
 
 ### Use `pip` to conduct local installation
 1. Create new virtual environment
@@ -19,7 +18,6 @@ conda activate pie;
 ```
 pip install .;
 ```
-
 
 ## Usages
 ### Required arguments
@@ -35,31 +33,36 @@ Use `--verbose` to monitor the running process and enable detailed logging.
 
 ### Full usages
 ```
-Usage: pie [OPTIONS] 
+Usage: pie [OPTIONS]
 
 Options:
-Input and output files argument:
   -i, --input TEXT       Input vcf/vcf.gz file for evaluation  [required]
   -n, --name TEXT        User defined sample name, [default: Sample]
-  -c, --compare TEXT     Ground truth vcf/vcf.gz file for comparison  [required]
-  -r, --ref TEXT         Reference file fasta file (.fasta or .fa) or fasta index file (.fai)  [required]
-  -o, --output TEXT      Output file prefix,  such as -o ./test/output_name  [required]
+  -c, --compare TEXT     Ground truth vcf/vcf.gz file for comparison
+                         [required]
+  -r, --ref TEXT         Reference file fasta file (.fasta or .fa) or fasta
+                         index file (.fai)  [required]
+  -o, --output TEXT      Output file prefix,  such as -o ./test/output_name
+                         [required]
   -t, --threads INTEGER  Maximum numbers of parallel threads [default: 24]
-
-Pairwise length argument:
-  -m, --max-len INTEGER  Maximum variant distance for pairwise calculation [default: 250000]
-
-Specific site or chromosome, SV definiton:
-  -b, --bed TEXT         .bed file specifying genomic regions to include.
-  --min-sv INTEGER       Minimal length threshold of Structral Variant [default: 30, ALT length > 30 bp is SV]
-  --chrom TEXT           Chromosome to evaluate,use comma to join chromosome name e.g. --chrom chr1,chr2,chr3 [default:chr1,chr2,chr3,...,chr22]
-  --sexchrom TEXT        Sex chromosme,use comma to join chromosome name e.g. --sexchrom chrX,chrY [default: chrX,chrY]
-  --mincount INTEGER     Minimum numbers of phased sites in a phase block [default: 2]
-
-flag:
-  --block                Output phasing block start and end positions in a BED file
+  -m, --max-len INTEGER  Maximum variant distance for pairwise calculation
+                         [default: 250000]
+  -b, --bed TEXT         .bed file specifying genomic regions to include
+                         [default: None]
+  --min-sv INTEGER       Minimal length threshold of Structral Variant
+                         [default: 30, ALT length > 30 bp is SV]
+  --chrom TEXT           Chromosome to evaluate,use comma to join chromosome
+                         name e.g. --chrom chr1,chr2,chr3
+                         [default:chr1,chr2,chr3,...,chr22]
+  --sexchrom TEXT        Sex chromosme,use comma to join chromosome name e.g.
+                         --sexchrom chrX,chrY [default: chrX,chrY]
+  --mincount INTEGER     Minimum numbers of phased sites in a phase block
+                         [default: 2]
+  --block                Output phasing block start and end positions in a BED
+                         file
   --no-sex               Ignore sex chromosome
-  --canonical            Canonical mode, only evaluate single mutation SNV ignore double heterozygous site
+  --canonical            Canonical mode, only evaluate single mutation SNV
+                         ignore double heterozygous site
   --only-snv             Only evaluate single nucleotide variation
   --only-indel           Only evaluate insertion and deletion
   --only-sv              Only evaluate structural variant
@@ -67,12 +70,12 @@ flag:
   --no-indel             Ignore insertion and deletion
   --no-sv                Ignore structural variant
   --no-double            Ignore double heterozygous site
-  --no-sort              Do not sort chromosome or regions, directly use the input order
-   --include-genotype    Including the impact of variant calling of genotype on phasing results, use to compare different
-                         pipleline, such as alignment-based phasing and de-novo assembly
-  --verbose              Enable verbose mode, printing parameters and progress to standard output
+  --no-sort              Do not sort chromosome or regions, directly use the
+                         input order
+  --verbose              Enable verbose mode, printing parameters and progress
+                         to standard output
   --version              Show the version and exit.
-  -h, --help             Show this message and exit.
+  --help                 Show this message and exit.
 ```
 
 ## Exmaples
@@ -120,7 +123,6 @@ Small query and truth test files are provided in [here](./tests) including three
 The `VCF` format follows regulations in <https://samtools.github.io/hts-specs/VCFv4.1.pdf>
 
 
-
 ## Output file
 | Output suffix | Description | Condition |
 |:---:|:---:|:--:|
@@ -141,6 +143,7 @@ The actual performance may vary depending on factors such as size of `vcf`, I/O 
 - [click](https://github.com/pallets/click): Python command line
 - [cyvcf2](https://github.com/brentp/cyvcf2): VCF/BCF  processing
 - [pyfastx](https://github.com/lmdu/pyfastx): Reference FASTA processing
+- [numba](https://github.com/numba/numba): JIT accerleration
 - [sortedcontainers](https://github.com/grantjenks/python-sortedcontainers): Python Sorted Container Types
 
 
