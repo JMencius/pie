@@ -101,6 +101,7 @@ def cal_se(hamming_list: list) -> tuple:
     
     return (se_count, event_count)
 
+
 @njit(fastmath=True, nogil=True)
 def calc_internal_tp_fp(sites, v0, v1, max_len):
     tp = 0.0
@@ -124,6 +125,7 @@ def calc_internal_tp_fp(sites, v0, v1, max_len):
                 w = 1.0
             else:
                 w = 1.0 / (dist - max_len)
+
             val0_j = v0[j]
             val1_j = v1[j]
             
@@ -151,7 +153,7 @@ def fast_calc_weights(arr_a, arr_b, truth_a, truth_b, max_len):
             val_b = arr_b[j]
             t_b = truth_b[j]
             
-            if t_a != t_b:
+            if t_a != t_b or val_a == val_b:
                 continue
 
             if val_a > val_b:
@@ -232,6 +234,7 @@ def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, tru
     pairwise_TP, pairwise_FP, pairwise_FN = 0, 0, 0
     # calculate pairwise metrics
     blocks = list(chrom_block.values())
+    newfn = set()
     for i in range(len(blocks)):
         v0_arr = np.array(blocks[i].querysymbol, dtype = np.int8)
         v1_arr = np.array(blocks[i].truthsymbol, dtype = np.int8)
@@ -240,16 +243,16 @@ def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, tru
             pairwise_TP += tp
             pairwise_FP += fp
 
-        fn = evaluate_interblock(list(blocks[i].unphase_variants), list(blocks[i].phase_variants), truth_dict, max_len)
-        pairwise_FN += fn
-    
+        fn1 = evaluate_interblock(list(blocks[i].unphase_variants), list(blocks[i].phase_variants), truth_dict, max_len)
+        fn2 = evaluate_interblock(list(blocks[i].unphase_variants), list(blocks[i].unphase_variants), truth_dict, max_len)
+        pairwise_FN += fn1 + fn2 / 2
+
     blocks_variants = [list(i.phase_variants) + list(i.unphase_variants) for i in blocks]    
     for i in range(len(blocks_variants)):
         for j in range(i + 1, len(blocks_variants)):
             fn = evaluate_interblock(blocks_variants[i], blocks_variants[j], truth_dict, max_len)
             pairwise_FN += fn
 
-    
 
     pairwise_precision, pairwise_recall, pairwise_f1 = cal_all(pairwise_TP, pairwise_FP, pairwise_FN)
 
