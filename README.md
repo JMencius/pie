@@ -5,7 +5,8 @@ Phasing all-In-one Evaluator, for haplotype phasing evaluation
 
 ## Installation
 Currently, `Pie` does not support online installation, but will be available through `pip` or `conda` upon publication.
-Installation will finish in a few minutes
+
+Installation will finish in a few minutes.
 
 ### Use `pip` to conduct local installation
 1. Create new virtual environment
@@ -87,7 +88,7 @@ pie --verbose -i phase.vcf -c truth.vcf -r ref.fa -o ./output/comprehensive
 
 2. (Chromosome specific) Restrict evaluation to selected chromosome
 ```
-pie --verbose -i phase.vcf -c truth.vcf -r ref.fa -o ./output/chr6
+pie --verbose --chrom chr6 -i phase.vcf -c truth.vcf -r ref.fa -o ./output/chr6
 ```
 
 3. (Region specific) Focus only on regions defined in a BED file.
