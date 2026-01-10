@@ -20,7 +20,7 @@ setup(
         "sortedcontainers>=2.4.0",
         "pyfastx>=2.2.0",
         "lmdb>=1.6.2",
-        "numba>=0.58.1"
+        "numba>=0.58.1",
         "pytest",
         ],
     entry_points={
