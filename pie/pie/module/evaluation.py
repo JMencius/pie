@@ -271,6 +271,9 @@ def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, tru
             fn = evaluate_interblock(blocks_variants[i], blocks_variants[j], truth_dict, max_len)
             pairwise_FN += fn
 
+    fn3 = evaluate_interblock(merged, merged, truth_dict, max_len)
+    pairwise_FN += fn3 / 2
+
 
     pairwise_precision, pairwise_recall, pairwise_f1 = cal_all(pairwise_TP, pairwise_FP, pairwise_FN)
 
