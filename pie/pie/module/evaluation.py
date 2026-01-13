@@ -194,11 +194,17 @@ def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, tru
     PSE_denom, PSE = 0, 0
     lmdb_list = list()
 
+    more_than_2variant = list()
+    idx = 0
+    blocks = list(chrom_block.values())
     # calculate traditional metrics
-    for b in chrom_block.values():
+    for b in blocks:
         # filter out very small block
         if (b.snv + b.indel + b.sv) < mincount:
+            idx += 1
             continue
+        
+        more_than_2variant.append(idx)
 
         # b for block
         total_block += 1
@@ -231,14 +237,16 @@ def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, tru
         SE += se_count
         SE_denom += se_event_count
     
+        idx += 1
+
+    
     pairwise_TP, pairwise_FP, pairwise_FN = 0, 0, 0
     # calculate pairwise metrics
-    blocks = list(chrom_block.values())
     newfn = set()
-    for i in range(len(blocks)):
-        v0_arr = np.array(blocks[i].querysymbol, dtype = np.int8)
-        v1_arr = np.array(blocks[i].truthsymbol, dtype = np.int8)
-        if len(v0_arr) >= 2 and len(v1_arr) >= 2:
+    for i in more_than_2variant:
+        if len(blocks[i].querysymbol) >= 2 and len(blocks[i].truthsymbol) >= 2:
+            v0_arr = np.array(blocks[i].querysymbol, dtype = np.int8)
+            v1_arr = np.array(blocks[i].truthsymbol, dtype = np.int8)
             tp, fp = calc_internal_tp_fp(np.array(blocks[i].phase_variants, dtype = np.int64), v0_arr, v1_arr, max_len)
             pairwise_TP += tp
             pairwise_FP += fp
@@ -247,7 +255,17 @@ def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, tru
         fn2 = evaluate_interblock(list(blocks[i].unphase_variants), list(blocks[i].unphase_variants), truth_dict, max_len)
         pairwise_FN += fn1 + fn2 / 2
 
-    blocks_variants = [list(i.phase_variants) + list(i.unphase_variants) for i in blocks]    
+    blocks_variants = list()
+    merged = list()
+    for i in blocks:
+        temp = list(i.phase_variants) + list(i.unphase_variants)
+        if len(temp) == 1:
+            merged.extend(temp)
+        else:
+            blocks_variants.append(temp)
+
+    blocks_variants.append(merged)
+
     for i in range(len(blocks_variants)):
         for j in range(i + 1, len(blocks_variants)):
             fn = evaluate_interblock(blocks_variants[i], blocks_variants[j], truth_dict, max_len)
