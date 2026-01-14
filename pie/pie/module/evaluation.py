@@ -239,7 +239,6 @@ def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, tru
     
         idx += 1
 
-    
     pairwise_TP, pairwise_FP, pairwise_FN = 0, 0, 0
     # calculate pairwise metrics
     newfn = set()
@@ -255,6 +254,8 @@ def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, tru
         fn2 = evaluate_interblock(list(blocks[i].unphase_variants), list(blocks[i].unphase_variants), truth_dict, max_len)
         pairwise_FN += fn1 + fn2 / 2
 
+    
+
     blocks_variants = list()
     merged = list()
     for i in blocks:
@@ -267,9 +268,11 @@ def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, tru
     blocks_variants.append(merged)
 
     for i in range(len(blocks_variants)):
+        for_cal = list()
         for j in range(i + 1, len(blocks_variants)):
-            fn = evaluate_interblock(blocks_variants[i], blocks_variants[j], truth_dict, max_len)
-            pairwise_FN += fn
+            for_cal.extend(blocks_variants[j])
+        fn = evaluate_interblock(blocks_variants[i], for_cal, truth_dict, max_len)
+        pairwise_FN += fn
 
     fn3 = evaluate_interblock(merged, merged, truth_dict, max_len)
     pairwise_FN += fn3 / 2
