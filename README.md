@@ -1,31 +1,41 @@
-<img src="pie_logo.png" width = "100">  
+<img src="https://raw.githubusercontent.com/JMencius/pie/main/pie_logo.png" width="100" alt="PIE logo">
 
-# pie
-Phasing all-In-one Evaluator, for haplotype phasing evaluation
+# PIE
+PIE (Phasing all-In-one Evaluator) is a command-line tool for evaluating haplotype phasing.
 
 ## Installation
-Currently, `Pie` does not support online installation, but will be available through `pip` or `conda` upon publication.
-
-Installation will finish in a few minutes.
-
-### Use `pip` to conduct local installation
-1. Create new virtual environment
+Currently, the prebuilt wheel supports Python 3.8 on Linux `x86_64`.
+### Option1. Install through pip
+Due to name conflict on `PyPI`, we have to use `pie-phasing-eval` for pip installation. It is just a name change, won't affect the command line.
 ```
 conda create -n pie python=3.8;
 conda activate pie;
+pip install pie-phasing-eval;
 ```
 
-2. Navigate to the base directory, which contains `setup.py`. Use `pip` to install `pie`.
+### Option2. Install through Conda
 ```
+conda create -n pie python=3.8;
+conda activate pie;
+conda install -c bioconda pie;
+```
+
+
+### Option3. Local installation
+```
+conda create -n pie python=3.8;
+conda activate pie
+
+# Download and extract PIE, then enter the directory containing setup.py
 pip install .;
 ```
 
-## Usages
+## Usage
 ### Required arguments
 | Parameters | Description | Format or example |
 |:---:|:---:|:---:| 
-| `-i or --input` | file for evaluation | .vcf / .vcf.gz |
-| `-c or --compare` | ground truth file | .vcf / .vcf.gz |
+| `-i or --input` | file for evaluation | .vcf / .vcf.gz / .bcf |
+| `-c or --compare` | ground truth file | .vcf / .vcf.gz / .bcf |
 | `-r or --ref` | reference file | .fa / .fasta / .fai |
 | `-o or --output` | Output file prefix | exmaple: ./test/output_name |
 
@@ -45,19 +55,19 @@ Options:
                          index file (.fai)  [required]
   -o, --output TEXT      Output file prefix,  such as -o ./test/output_name
                          [required]
-  -t, --threads INTEGER  Maximum numbers of parallel threads [default: 24]
+  -t, --threads INTEGER  Maximum number of parallel threads [default: 24]
   -m, --max-len INTEGER  Maximum variant distance for pairwise calculation
-                         [default: 250000]
+                         [default: 2473538]
   -b, --bed TEXT         .bed file specifying genomic regions to include
                          [default: None]
-  --min-sv INTEGER       Minimal length threshold of Structral Variant
+  --min-sv INTEGER       Minimal length threshold of Structural Variant
                          [default: 30, ALT length > 30 bp is SV]
   --chrom TEXT           Chromosome to evaluate,use comma to join chromosome
                          name e.g. --chrom chr1,chr2,chr3
                          [default:chr1,chr2,chr3,...,chr22]
-  --sexchrom TEXT        Sex chromosme,use comma to join chromosome name e.g.
+  --sexchrom TEXT        Sex chromosome,use comma to join chromosome name e.g.
                          --sexchrom chrX,chrY [default: chrX,chrY]
-  --mincount INTEGER     Minimum numbers of phased sites in a phase block
+  --mincount INTEGER     Minimum number of phased sites in a phase block
                          [default: 2]
   --block                Output phasing block start and end positions in a BED
                          file
@@ -79,9 +89,9 @@ Options:
   --help                 Show this message and exit.
 ```
 
-## Exmaples
+## Examples
 Suppose `phase.vcf` is the sample VCF file to be evaluated against the ground truth VCF file (`truth.vcf`).
-1. (Comprehensive) Evaluate all autosome
+1. (Comprehensive) Evaluate all autosomes
 ```
 pie --verbose -i phase.vcf -c truth.vcf -r ref.fa -o ./output/comprehensive
 ```
@@ -96,7 +106,7 @@ pie --verbose --chrom chr6 -i phase.vcf -c truth.vcf -r ref.fa -o ./output/chr6
 pie --verbose -i phase.vcf -c truth.vcf -r ref.fa --bed mhc.bed -o ./output/mhc
 ```
 
-4. (Filter) Exclude structural variants (SV) from the analysis
+4. (Filter) Exclude Structural Variants (SV) from the analysis
 ```
 pie --verbose -i phase.vcf -c truth.vcf -r ref.fa --no-sv -o ./output/no_sv
 ```
@@ -112,7 +122,7 @@ pie --verbose -i phase.vcf -c truth.vcf -r ref.fa --chrom chr6 --only-snv --bloc
 ```
 
 ## Test data
-Small query and truth test files are provided in [here](./tests) including three formats:
+Small query and truth test files are provided in [here](https://github.com/JMencius/pie/tree/main/tests) including three formats:
 | Filename | Format | Description |
 |:---:|:---:|:---:|
 | small_query.vcf | VCF | Uncompressed VCF |
@@ -121,20 +131,19 @@ Small query and truth test files are provided in [here](./tests) including three
 
 `small_truth.vcf` is provided as the truth.
 
-The `VCF` format follows regulations in <https://samtools.github.io/hts-specs/VCFv4.1.pdf>
+The `VCF` format follows the VCF v4.1 specification <https://samtools.github.io/hts-specs/VCFv4.1.pdf>
 
 
 ## Output file
 | Output suffix | Description | Condition |
-|:---:|:---:|:--:|
+|:---:|:---:|:---:|
 | `.variant.stats.csv` | Genotype evaluation result and phased percentage | Always generated |
 | `.perchrom.csv` | Per chromosome phasing evaluation result | Always generated |
 | `.overall.csv` | Overall sample evaluation result | Always generated |
-| `.blocks.bed` | Raw phasing block start end in `-i` or `--input` file | with `--block` set |
+| `.blocks.bed` | Raw phasing block start and end in `-i` or `--input` file | with `--block` set |
 
-
-## Resouce consumption
-`Pie` is expected to completed evaluation within minutes with the default 24 threads on a stardard X86 platfrom.
+## Resource consumption
+`Pie` is expected to complete evaluation within minutes with the default 24 threads on an x86_64 platform.
 
 The actual performance may vary depending on factors such as size of `vcf`, I/O speed, memory speed, and CPU capabilities.
 
@@ -142,9 +151,9 @@ The actual performance may vary depending on factors such as size of `vcf`, I/O 
 ## Acknowledgements
 `Pie` is dependent on the following libraries, we are grateful to all the developers/maintainers:
 - [click](https://github.com/pallets/click): Python command line
-- [cyvcf2](https://github.com/brentp/cyvcf2): VCF/BCF  processing
+- [cyvcf2](https://github.com/brentp/cyvcf2): VCF/BCF processing
 - [pyfastx](https://github.com/lmdu/pyfastx): Reference FASTA processing
-- [numba](https://github.com/numba/numba): JIT accerleration
+- [numba](https://github.com/numba/numba): JIT acceleration
 - [sortedcontainers](https://github.com/grantjenks/python-sortedcontainers): Python Sorted Container Types
 
 

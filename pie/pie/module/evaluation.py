@@ -9,9 +9,14 @@ import numpy as np
 from numba import njit
 
 # load C so
+import importlib.util
 
-script_dir = os.path.dirname(os.path.realpath(__file__))
-lib = ctypes.CDLL(f"{script_dir}/lib/hamming.so")
+hamming_spec = importlib.util.find_spec("pie.module.lib.hamming")
+
+if hamming_spec is None or hamming_spec.origin is None:
+    raise ImportError("Cannot locate the bundled hamming shared library")
+
+lib = ctypes.CDLL(hamming_spec.origin)
 
 # hamming distance C function
 lib.hamming_distance.restype = ctypes.c_int

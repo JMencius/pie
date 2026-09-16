@@ -12,13 +12,13 @@ import logging
 @click.option("-c", "--compare", required = True, type = str, help = "Ground truth vcf/vcf.gz file for comparison")
 @click.option("-r", "--ref", required = True, type = str, help = "Reference file fasta file (.fasta or .fa) or fasta index file (.fai)")
 @click.option("-o", "--output", required = True, type = str, help = "Output file prefix,  such as -o ./test/output_name")
-@click.option("-t", "--threads", default = 24, type = int, help = "Maximum numbers of parallel threads [default: 24]")
-@click.option("-m", "--max-len", default = 250 * 10**3, type = int, help = "Maximum variant distance for pairwise calculation [default: 250000]")
+@click.option("-t", "--threads", default = 24, type = int, help = "Maximum number of parallel threads [default: 24]")
+@click.option("-m", "--max-len", default = 2473538, type = int, help = "Maximum variant distance for pairwise calculation [default: 250000]")
 @click.option("-b", "--bed", default = None, type = str, help = r".bed file specifying genomic regions to include [default: None]")
-@click.option("--min-sv", default = 30, type = int, help = "Minimal length threshold of Structral Variant [default: 30, ALT length > 30 bp is SV]")
+@click.option("--min-sv", default = 30, type = int, help = "Minimal length threshold of Structural Variant [default: 30, ALT length > 30 bp is SV]")
 @click.option("--chrom", default = ','.join(["chr" + str(i) for i in range(1, 23)]), type = str, help = "Chromosome to evaluate,use comma to join chromosome name e.g. --chrom chr1,chr2,chr3 [default:chr1,chr2,chr3,...,chr22]")
-@click.option("--sexchrom", default = "chrX,chrY", type = str, help = "Sex chromosme,use comma to join chromosome name e.g. --sexchrom chrX,chrY [default: chrX,chrY]")
-@click.option("--mincount", default = 2, type = int, help = "Minimum numbers of phased sites in a phase block [default: 2]")
+@click.option("--sexchrom", default = "chrX,chrY", type = str, help = "Sex chromosome,use comma to join chromosome name e.g. --sexchrom chrX,chrY [default: chrX,chrY]")
+@click.option("--mincount", default = 2, type = int, help = "Minimum number of phased sites in a phase block [default: 2]")
 @click.option("--block", is_flag = True, help = r"Output phasing block start and end positions in a BED file")
 @click.option("--no-sex", is_flag = True, help = "Ignore sex chromosome")
 @click.option("--canonical", is_flag = True, help = "Canonical mode, only evaluate single mutation SNV ignore double heterozygous site")
@@ -32,7 +32,7 @@ import logging
 @click.option("--no-sort", is_flag = True, help = "Do not sort chromosome or regions, directly use the input order")
 @click.option("--lmdb", is_flag = True, hidden = True, help = "Output intermediate hamming result as .lmdb file")
 @click.option("--verbose", is_flag = True, help = "Enable verbose mode, printing parameters and progress to standard output")
-@click.version_option(version="0.11.1", prog_name = r"Phasing all-in-one evaluator (pie), based on Python 3.7+")
+@click.version_option(version="0.11.2", prog_name = r"Phasing all-in-one evaluator (pie), based on Python 3.7+")
 def cli(input, name, compare, ref, output, threads, max_len, bed, min_sv, chrom, sexchrom, mincount, canonical, block, no_sex, only_snv, only_indel, only_sv, no_snv, no_indel, no_sv, no_double, no_sort, lmdb, verbose) -> tuple:
 
     # set logging
