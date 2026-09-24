@@ -15,7 +15,7 @@ pip install pie-phasing-eval
 
 ### Option2. Install through Conda
 ```
-conda create -n pie python=3.8
+conda create -n pie
 conda activate pie
 conda install -c bioconda pie
 ```
