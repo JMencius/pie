@@ -8,26 +8,26 @@ Currently, the prebuilt wheel supports Python 3.8 on Linux `x86_64`.
 ### Option1. Install through pip
 Due to name conflict on `PyPI`, we have to use `pie-phasing-eval` for pip installation. It is just a name change, won't affect the command line.
 ```
-conda create -n pie python=3.8;
-conda activate pie;
-pip install pie-phasing-eval;
+conda create -n pie python=3.8
+conda activate pie
+pip install pie-phasing-eval
 ```
 
 ### Option2. Install through Conda
 ```
-conda create -n pie python=3.8;
-conda activate pie;
-conda install -c bioconda pie;
+conda create -n pie python=3.8
+conda activate pie
+conda install -c bioconda pie
 ```
 
 
 ### Option3. Local installation
 ```
-conda create -n pie python=3.8;
+conda create -n pie python=3.8
 conda activate pie
 
-# Download and extract PIE, then enter the directory containing setup.py
-pip install .;
+# Download and decompress PIE release, enter the directory containing setup.py
+pip install .
 ```
 
 ## Usage
