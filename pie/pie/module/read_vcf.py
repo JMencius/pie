@@ -4,6 +4,7 @@ from pie.module.pie_class import pievariant
 import sys
 
 
+
 def get_type(ref: str, alt: list, min_sv: int, left: int, right: int) -> tuple:
     if len(alt) > 1:
         double = True

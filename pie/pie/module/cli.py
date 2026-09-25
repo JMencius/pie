@@ -32,7 +32,7 @@ import logging
 @click.option("--no-sort", is_flag = True, help = "Do not sort chromosome or regions, directly use the input order")
 @click.option("--lmdb", is_flag = True, hidden = True, help = "Output intermediate hamming result as .lmdb file")
 @click.option("--verbose", is_flag = True, help = "Enable verbose mode, printing parameters and progress to standard output")
-@click.version_option(version="0.11.2", prog_name = r"Phasing all-in-one evaluator (pie), based on Python 3.7+")
+@click.version_option(version="0.11.3", prog_name = r"Phasing all-in-one evaluator (pie), based on Python 3.8+")
 def cli(input, name, compare, ref, output, threads, max_len, bed, min_sv, chrom, sexchrom, mincount, canonical, block, no_sex, only_snv, only_indel, only_sv, no_snv, no_indel, no_sv, no_double, no_sort, lmdb, verbose) -> tuple:
 
     # set logging

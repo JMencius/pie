@@ -14,12 +14,10 @@ pip install pie-phasing-eval
 ```
 
 ### Option2. Install through Conda
-It is recommended to resolve dependencies using `mamba`.
 ```
 conda create -n pie -y
 conda activate pie
-conda install mamba  # skip if you have mamba in base
-mamba install -c bioconda pie
+conda install -c bioconda pie
 ```
 
 

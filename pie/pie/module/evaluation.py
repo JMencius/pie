@@ -184,8 +184,8 @@ def evaluate_interblock(listA, listB, truth_dict, max_len):
     truth_a_list = [label_map[truth_dict[x]] for x in listA]
     truth_b_list = [label_map[truth_dict[x]] for x in listB]
 
-    truth_a = np.array(truth_a_list, dtype=np.int8)
-    truth_b = np.array(truth_b_list, dtype=np.int8)
+    truth_a = np.array(truth_a_list, dtype=np.int64)
+    truth_b = np.array(truth_b_list, dtype=np.int64)
     
     return fast_calc_weights(arr_a, arr_b, truth_a, truth_b, max_len)
 
@@ -249,8 +249,8 @@ def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, tru
     newfn = set()
     for i in more_than_2variant:
         if len(blocks[i].querysymbol) >= 2 and len(blocks[i].truthsymbol) >= 2:
-            v0_arr = np.array(blocks[i].querysymbol, dtype = np.int8)
-            v1_arr = np.array(blocks[i].truthsymbol, dtype = np.int8)
+            v0_arr = np.array(blocks[i].querysymbol, dtype = np.int64)
+            v1_arr = np.array(blocks[i].truthsymbol, dtype = np.int64)
             tp, fp = calc_internal_tp_fp(np.array(blocks[i].phase_variants, dtype = np.int64), v0_arr, v1_arr, max_len)
             pairwise_TP += tp
             pairwise_FP += fp
