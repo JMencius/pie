@@ -5,7 +5,7 @@ ROOT = Path(__file__).parent
 
 setup(
     name="pie-phasing-eval",
-    version="0.11.2",
+    version="0.11.3",
 
     description="Phasing all-in-one evaluator",
     long_description=(ROOT / "README.md").read_text(encoding="utf-8"),
