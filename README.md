@@ -121,6 +121,25 @@ pie --verbose -i phase.vcf -c truth.vcf -r ref.fa --block -o ./output/more
 pie --verbose -i phase.vcf -c truth.vcf -r ref.fa --chrom chr6 --only-snv --block -o ./output/misc
 ```
 
+## Demo data
+A demo is provided in [demo.sh](./demo.sh). It automatically downloads the phased VCF from [ScienceDB](https://www.scidb.cn/en/file?fid=a79b69e3186002aa9651ac63a787bae4&mode=front), the truth VCF from [HPRC](https://s3-us-west-2.amazonaws.com/human-pangenomics/index.html?prefix=working/HPRC_PLUS/HG02818/assemblies/year1_f1_assembly_v2_genbank/assembly_qc/dipcall/), and the reference file, and then runs PIE. **Please ensure that PIE is installed before running this demo**.
+```
+#!/bin/bash
+
+# Download HG02818 phased VCF
+wget -c -O HG02818.nanopore.R10.hac.HapCUT2.concated.variants.phased.vcf.gz 'https://china.scidb.cn/download?fileId=a79b69e3186002aa9651ac63a787bae4'
+
+# Download HG02818 truth VCF
+wget -c https://s3-us-west-2.amazonaws.com/human-pangenomics/working/HPRC_PLUS/HG02818/assemblies/year1_f1_assembly_v2_genbank/assembly_qc/dipcall/HG02818.f1_assembly_v2_genbank.dip.vcf.gz
+
+# Download reference file
+wget -c https://ont-open-data.s3.amazonaws.com/colo829_2024.03/wf_somatic_variation/sup/GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta.fai
+
+# Run PIE
+pie --verbose -i HG02818.nanopore.R10.hac.HapCUT2.concated.variants.phased.vcf.gz -c HG02818.f1_assembly_v2_genbank.dip.vcf.gz -r GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta.fai -o ./HG02818
+```
+
+
 ## Test data
 Small query and truth test files are provided in [here](https://github.com/JMencius/pie/tree/main/tests) including three formats:
 | Filename | Format | Description |
@@ -143,7 +162,7 @@ The `VCF` format follows the VCF v4.1 specification <https://samtools.github.io/
 | `.blocks.bed` | Raw phasing block start and end in `-i` or `--input` file | with `--block` set |
 
 ## Resource consumption
-`Pie` is expected to complete evaluation within minutes with the default 24 threads on an x86_64 platform.
+`Pie` is expected to complete evaluation within minutes using the default 24 threads on an x86_64 platform.
 
 The actual performance may vary depending on factors such as size of `vcf`, I/O speed, memory speed, and CPU capabilities.
 
@@ -155,6 +174,7 @@ The actual performance may vary depending on factors such as size of `vcf`, I/O 
 - [pyfastx](https://github.com/lmdu/pyfastx): Reference FASTA processing
 - [numba](https://github.com/numba/numba): JIT acceleration
 - [sortedcontainers](https://github.com/grantjenks/python-sortedcontainers): Python Sorted Container Types
+- [lmdb](https://github.com/jnwatson/py-lmdb): LMDB storage for PieStore
 
 
 
