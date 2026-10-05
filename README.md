@@ -25,8 +25,8 @@ conda install -c bioconda pie
 ```
 conda create -n pie python=3.8
 conda activate pie
-
-# Download and decompress PIE release, enter the directory containing setup.py
+git clone https://github.com/JMencius/pie/   # Or download the latest release
+cd pie
 pip install .
 ```
 
