@@ -4,7 +4,7 @@
 PIE (Phasing all-In-one Evaluator) is a command-line tool for evaluating haplotype phasing.
 
 ## Installation
-Currently, the prebuilt wheel supports Python 3.8 on Linux `x86_64`.
+Currently, the prebuilt wheel supports Python 3.8+ on Linux `x86_64`.
 ### Option1. Install through pip
 Due to name conflict on `PyPI`, we have to use `pie-phasing-eval` for pip installation. It is just a name change, won't affect the command line.
 ```
