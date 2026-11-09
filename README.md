@@ -7,6 +7,7 @@ PIE (Phasing all-In-one Evaluator) is a command-line tool for evaluating haploty
 Currently, the prebuilt wheel supports Python 3.8+ on Linux `x86_64`.
 ### Option1. Install through pip
 Due to name conflict on `PyPI`, we have to use `pie-phasing-eval` for pip installation. It is just a name change, won't affect the command line.
+If you encounter issue `ERROR: ERROR: Failed to build installable wheels for some pyproject.toml based projects (cyvcf2)`, please try to upgrade Python to 3.13
 ```
 conda create -n pie python=3.8
 conda activate pie
