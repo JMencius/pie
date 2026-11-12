@@ -8,14 +8,16 @@ def get_ref_len(ref: str, chrom: list) -> dict:
     suffix = os.path.splitext(ref)[1]
     if suffix == ".fa" or suffix == ".fasta":
         length_dict = fasta_mode(ref, chrom)
-        return length_dict
     elif suffix == ".fai":
         length_dict = fai_mode(ref, chrom)
-        return length_dict
     else:
         logging.error("Invalid file suffix of the reference file, must be either .fasta/.fa or .fai")
         raise ValueError("Invalid file suffix of the reference file")
-
+    missing = [name for name in dict.fromkeys(chrom) if name not in length_dict]
+    if missing:
+        raise ValueError("Reference file %s is missing target chromosome(s): %s" %
+                         (ref, ", ".join(missing)))
+    return length_dict
 
 
 def fasta_mode(ref: str, chrom: list) -> dict:

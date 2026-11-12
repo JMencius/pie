@@ -144,8 +144,8 @@ def calc_internal_tp_fp(sites, v0, v1, max_len):
 
 
 
-@njit(fastmath=True, nogil=True)
-def fast_calc_weights(arr_a, arr_b, truth_a, truth_b, max_len):
+@njit(fastmath = True, nogil = True)
+def fast_calc_weights(arr_a, arr_b, truth_a, truth_b, max_len, event_a, event_b):
     total_weight = 0.0
     n_a = len(arr_a)
     n_b = len(arr_b)
@@ -158,7 +158,7 @@ def fast_calc_weights(arr_a, arr_b, truth_a, truth_b, max_len):
             val_b = arr_b[j]
             t_b = truth_b[j]
             
-            if t_a != t_b or val_a == val_b:
+            if t_a != t_b or event_a[i] == event_b[j]:
                 continue
 
             if val_a > val_b:
@@ -174,8 +174,8 @@ def fast_calc_weights(arr_a, arr_b, truth_a, truth_b, max_len):
     return total_weight
 
 def evaluate_interblock(listA, listB, truth_dict, max_len):
-    arr_a = np.array(listA, dtype=np.int64)
-    arr_b = np.array(listB, dtype=np.int64)
+    arr_a = np.array([key[0] for key in listA], dtype = np.int64)
+    arr_b = np.array([key[0] for key in listB], dtype = np.int64)
 
     unique_labels = sorted(list(set(truth_dict.values())))
     
@@ -187,7 +187,12 @@ def evaluate_interblock(listA, listB, truth_dict, max_len):
     truth_a = np.array(truth_a_list, dtype=np.int64)
     truth_b = np.array(truth_b_list, dtype=np.int64)
     
-    return fast_calc_weights(arr_a, arr_b, truth_a, truth_b, max_len)
+    event_ids = {key: index for index, key in enumerate(dict.fromkeys(itertools.chain(listA, listB)))}
+    event_a = np.array([event_ids[key] for key in listA], dtype = np.int64)
+    event_b = np.array([event_ids[key] for key in listB], dtype = np.int64)
+
+    return fast_calc_weights(arr_a, arr_b, truth_a, truth_b, max_len, event_a, event_b)    
+
 
 
 def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, truth_dict: dict, max_len: int, target_bed_list: list, genotype_FP: list, lmdb: bool) -> dict:
@@ -238,7 +243,7 @@ def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, tru
         
         # calculate switch error rate
         se_count, se_event_count = cal_se(compare_list)
-        ## se_count, se_event_count = cal_se_debug(compare_list, list(b.subject.keys()), b.chrom)
+        ## se_count, se_event_count = cal_se_debug(compare_list, [key[0] for key in b.subject], b.chrom)
         SE += se_count
         SE_denom += se_event_count
     
@@ -251,15 +256,21 @@ def blockwise_evaluate(chrom_block: dict, ref_len_dict: dict, mincount: int, tru
         if len(blocks[i].querysymbol) >= 2 and len(blocks[i].truthsymbol) >= 2:
             v0_arr = np.array(blocks[i].querysymbol, dtype = np.int64)
             v1_arr = np.array(blocks[i].truthsymbol, dtype = np.int64)
-            tp, fp = calc_internal_tp_fp(np.array(blocks[i].phase_variants, dtype = np.int64), v0_arr, v1_arr, max_len)
+            
+            positions = np.array([key[0] for key in blocks[i].phase_variants], dtype=np.int64)
+            tp, fp = calc_internal_tp_fp(positions, v0_arr, v1_arr, max_len)            
+
             pairwise_TP += tp
             pairwise_FP += fp
 
-        fn1 = evaluate_interblock(list(blocks[i].unphase_variants), list(blocks[i].phase_variants), truth_dict, max_len)
-        fn2 = evaluate_interblock(list(blocks[i].unphase_variants), list(blocks[i].unphase_variants), truth_dict, max_len)
+
+    for b in blocks:
+        if not b.unphase_variants:
+            continue
+        fn1 = evaluate_interblock(list(b.unphase_variants), list(b.phase_variants), truth_dict, max_len)
+        fn2 = evaluate_interblock(list(b.unphase_variants), list(b.unphase_variants), truth_dict, max_len)
         pairwise_FN += fn1 + fn2 / 2
 
-    
 
     blocks_variants = list()
     merged = list()

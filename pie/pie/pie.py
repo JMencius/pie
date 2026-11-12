@@ -106,8 +106,7 @@ def main():
         evaluation_results = [i[0] for i in evaluation_results]
 
         logging.info("Outputting intermediate result to lmdb")
-        write_lmdb(lmdb_list, chrom, output)              
-
+        write_lmdb(lmdb_list, chrom, output, target_bed_list)
 
     logging.info("Calculating NG50 metrics")
     if not bed_target:

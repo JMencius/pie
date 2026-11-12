@@ -26,6 +26,8 @@ def cal_f1(precision: float, recall: float) -> float:
     if (denominator != 0) and not(math.isnan(denominator)):
         F1 = (2 * precision * recall) / denominator
         return F1
+    elif precision == 0 and recall == 0:
+        return 0.0
     else:
         return math.nan
 

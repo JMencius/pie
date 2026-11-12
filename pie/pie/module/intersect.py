@@ -80,7 +80,7 @@ def intersect(query: dict, truth: dict, chrom: str, filters: dict) -> dict:
                 genotype_TP += 1
                 if truth_variant.isphased:
                     if check_filters(filters, query_variant) and check_filters(filters, truth_variant):
-                        truth_blocks[truth_variant.pos] = truth_variant.ps
+                        truth_blocks[i] = truth_variant.ps
                         
                         if not query_variant.isphased:
                             total_unphase_count += 1
@@ -94,10 +94,9 @@ def intersect(query: dict, truth: dict, chrom: str, filters: dict) -> dict:
                             phaseblock[(truth_variant.ps, query_variant.ps)].add_phased_variant(query_variant, truth_variant)
     
     # add miss alt genotype
-    for i in query.values():
-        if i.pos not in truth:
-            genotype_FP += 1    
-
+    for key in query:
+        if key not in truth:
+            genotype_FP += 1
 
     # finalize blocks
     for b in phaseblock.values():
@@ -110,8 +109,8 @@ def intersect(query: dict, truth: dict, chrom: str, filters: dict) -> dict:
     
 
     for site in unphase_variant:
-        in_block = find_closest_block(site, blocks_start_end)
-        
+        in_block = find_closest_block(site[0], blocks_start_end)        
+
         if in_block == "ALL_UNPHASE":
             if "ALL_UNPHASE" not in phaseblock:
                 phaseblock["ALL_UNPHASE"] = block(working_chr, "ALL_UNPHASE")
@@ -121,6 +120,7 @@ def intersect(query: dict, truth: dict, chrom: str, filters: dict) -> dict:
             for b in phaseblock.values():
                 if (b.start, b.end) == in_block:
                     b.add_unphased_variant(site)
+                    break
     
     if "ALL_UNPHASE" in phaseblock:
         logging.warning(f"No phased blocks in {working_chr}")
@@ -158,10 +158,4 @@ def find_closest_block(site: int, intervals: list):
 
 
     
-            
-
-
-
-
-
-
+    

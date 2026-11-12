@@ -32,7 +32,7 @@ import logging
 @click.option("--no-sort", is_flag = True, help = "Do not sort chromosome or regions, directly use the input order")
 @click.option("--lmdb", is_flag = True, hidden = True, help = "Output intermediate hamming result as .lmdb file")
 @click.option("--verbose", is_flag = True, help = "Enable verbose mode, printing parameters and progress to standard output")
-@click.version_option(version="0.11.3", prog_name = r"Phasing all-in-one evaluator (pie), based on Python 3.8+")
+@click.version_option(version="0.12.0", prog_name = r"Phasing all-in-one evaluator (pie), based on Python 3.8+")
 def cli(input, name, compare, ref, output, threads, max_len, bed, min_sv, chrom, sexchrom, mincount, canonical, block, no_sex, only_snv, only_indel, only_sv, no_snv, no_indel, no_sv, no_double, no_sort, lmdb, verbose) -> tuple:
 
     # set logging
@@ -54,9 +54,11 @@ def cli(input, name, compare, ref, output, threads, max_len, bed, min_sv, chrom,
     # check parameters
     input_vcf = Path(input)
     compare_vcf = Path(compare)
-    if not (input_vcf.suffix == ".vcf" or input_vcf.suffix == ".bcf" or (".gz" in input_vcf.suffixes and ".vcf" in input_vcf.suffixes)):
+
+    ## Compataible with HapCUT2 output .VCF file
+    if not (input_vcf.suffix.lower() == ".vcf" or input_vcf.suffix == ".bcf" or (".gz" in input_vcf.suffixes and ".vcf" in input_vcf.suffixes)):
         raise ValueError(r"-i or --input must be .vcf or .vcf.gz file. You provided a file with a different extension")
-    if not (compare_vcf.suffix == ".vcf" or compare_vcf.suffix == ".bcf" or (".gz" in compare_vcf.suffixes and ".vcf" in compare_vcf.suffixes)):
+    if not (compare_vcf.suffix.lower() == ".vcf" or compare_vcf.suffix == ".bcf" or (".gz" in compare_vcf.suffixes and ".vcf" in compare_vcf.suffixes)):
         raise ValueError(r"-c or --compare must be .vcf or .vcf.gz file. You provided a file with a different extension")     
 
     ref_file = Path(ref)

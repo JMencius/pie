@@ -1,8 +1,9 @@
 import logging
 from cyvcf2 import VCF
-from pie.module.pie_class import pievariant
+from pie.module.pie_class import pievariant, make_variant_key
 import sys
-
+import numpy as np
+from bisect import bisect_right
 
 
 def get_type(ref: str, alt: list, min_sv: int, left: int, right: int) -> tuple:
@@ -11,7 +12,7 @@ def get_type(ref: str, alt: list, min_sv: int, left: int, right: int) -> tuple:
     else:
         double = False
     
-    variant_pool = list(ref) + alt
+    variant_pool = [ref] + alt
     if not ((0 <= left < len(variant_pool)) and (0 <= right < len(variant_pool))): 
         return None
 
@@ -32,13 +33,13 @@ def read_vcf(filename: str, working_chr: str, bed_target: dict, min_sv: int) -> 
     for variant in VCF(filename, threads = 1):
         if variant.CHROM == working_chr:
             isphased = variant.gt_phases[0]
-            if "PS" in variant.FORMAT:
-                if variant.format("PS"):
-                    ps_tag = str(variant.format("PS")[0])
-                else:
-                    ps_tag = "UNK"
-            else:
-                ps_tag = "UNK"
+
+            ps_tag = "UNK"
+            if isphased and "PS" in variant.FORMAT:
+                values = variant.format("PS")
+                if isinstance(values, np.ndarray):
+                    ps_tag = str(values[0])
+
             left, right, _ = variant.genotypes[0]
             if (left != right) and ('.' not in variant.gt_bases[0]):
                 type_result = get_type(variant.REF, variant.ALT, min_sv, left, right)
@@ -47,26 +48,30 @@ def read_vcf(filename: str, working_chr: str, bed_target: dict, min_sv: int) -> 
                     continue
                 
                 isdouble, variant_type = type_result
+ 
+                # change to tuple key (pos, SHA256(ref, alt))               
+                variant_key = make_variant_key(variant.POS, variant.REF, variant.ALT)
+                current_variant = pievariant(variant.CHROM, variant.POS, variant.REF, variant.ALT, ps_tag, left, right, variant_type, isphased, isdouble, variant_key)
                 
-                current_variant = pievariant(variant.CHROM, variant.POS, variant.REF, variant.ALT, ps_tag, left, right, variant_type, isphased, isdouble)
+                chr_variants[variant_key] = current_variant                
                 
-                flag = True
-                if variant.POS in chr_variants:
-                    if chr_variants[variant.POS].isphased:
-                        flag = False
-                if flag:
-                    chr_variants[variant.POS] = current_variant
+
     if not bed_target:
         return chr_variants
     else:
         region_variants_dict = dict()
         if working_chr in bed_target:
             regions = bed_target[working_chr]
+            ordered_keys = sorted(chr_variants)
+            positions = [key[0] for key in ordered_keys]
+
             for i in regions:
                 this_region = dict()
-                for site in range(i[0], i[1] + 1):
-                    if site in chr_variants:
-                        this_region[site] = chr_variants[site]
+                left = bisect_right(positions, i[0])
+                right = bisect_right(positions, i[1])
+                for variant_key in ordered_keys[left:right]:
+                    this_region[variant_key] = chr_variants[variant_key]
+
                 region_variants_dict[(working_chr, i[0], i[1])] = this_region
 
             # free memory
