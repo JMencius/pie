@@ -2,6 +2,7 @@
 
 # PIE
 PIE (Phasing all-In-one Evaluator) is a command-line tool for evaluating haplotype phasing.
+For more details in <https://doi.org/10.1093/bib/bbag634>
 
 ## Installation
 Currently, the prebuilt wheel supports Python 3.8+ on Linux `x86_64`.
@@ -180,8 +181,8 @@ The actual performance may vary depending on factors such as size of `vcf`, I/O 
 - [sortedcontainers](https://github.com/grantjenks/python-sortedcontainers): Python Sorted Container Types
 - [lmdb](https://github.com/jnwatson/py-lmdb): LMDB storage for PieStore
 
-
-
+## Citation
+If you use `Pie` in your work please cite <https://doi.org/10.1093/bib/bbag634>
 
 
 
